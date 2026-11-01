@@ -1,37 +1,27 @@
-import { useEffect, useState } from 'react';
-import { healthResponseSchema } from '@mms/shared';
+import type { Auth } from 'firebase/auth';
+import { AuthProvider } from './auth/AuthProvider.tsx';
+import { RequireAuth } from './auth/RequireAuth.tsx';
+import type { ApiClient } from './lib/trpc.ts';
+import { DashboardPage } from './pages/DashboardPage.tsx';
+import { QueryLayer } from './providers/QueryLayer.tsx';
 
-type ApiState = 'checking' | 'ok' | 'unreachable';
-
-// Placeholder until the app shell (Step 1.3). Shows whether the API is reachable.
-export function App() {
-  const [api, setApi] = useState<ApiState>('checking');
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/health', { signal: controller.signal })
-      .then((res) => res.json())
-      .then((body: unknown) => {
-        healthResponseSchema.parse(body);
-        setApi('ok');
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        console.error('API health check failed', error);
-        setApi('unreachable');
-      });
-    return () => {
-      controller.abort();
-    };
-  }, []);
-
+// Routing (TanStack Router, 404/error pages) arrives with the app shell in Step 1.3.
+export function App({
+  firebaseAuth,
+  apiClient,
+  allowedDomain,
+}: {
+  firebaseAuth: Auth;
+  apiClient: ApiClient;
+  allowedDomain: string;
+}) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-slate-900">
-      <h1 className="text-3xl font-semibold tracking-tight">MMS CRM</h1>
-      <p className="text-slate-600">Make My Solar — scaffold placeholder</p>
-      <p className="text-sm" data-testid="api-status">
-        API: {api === 'checking' ? 'checking…' : api === 'ok' ? 'ok' : 'unreachable'}
-      </p>
-    </main>
+    <AuthProvider auth={firebaseAuth} apiClient={apiClient} allowedDomain={allowedDomain}>
+      <QueryLayer apiClient={apiClient}>
+        <RequireAuth>
+          <DashboardPage />
+        </RequireAuth>
+      </QueryLayer>
+    </AuthProvider>
   );
 }

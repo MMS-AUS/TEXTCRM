@@ -29,6 +29,33 @@ export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
 
 export type FeaturePermissions = Record<PermissionAction, boolean>;
 
+export type PermissionMatrix = Record<Feature, FeaturePermissions>;
+
+export const NO_ACCESS: FeaturePermissions = {
+  view: false,
+  create: false,
+  edit: false,
+  delete: false,
+  export: false,
+};
+
+export function emptyPermissionMatrix(): PermissionMatrix {
+  return Object.fromEntries(FEATURES.map((f) => [f, { ...NO_ACCESS }])) as PermissionMatrix;
+}
+
+/** The server enforces this on every procedure; the web uses it only to hide controls. */
+export function hasPermission(
+  matrix: PermissionMatrix,
+  feature: Feature,
+  action: PermissionAction,
+): boolean {
+  return matrix[feature][action];
+}
+
+export function isFeature(value: string): value is Feature {
+  return (FEATURES as readonly string[]).includes(value);
+}
+
 export const SYSTEM_ROLE_KEYS = ['admin', 'manager', 'sales', 'operations', 'service'] as const;
 
 export type SystemRoleKey = (typeof SYSTEM_ROLE_KEYS)[number];

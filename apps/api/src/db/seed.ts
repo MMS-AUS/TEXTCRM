@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { eq, inArray } from 'drizzle-orm';
-import { DEFAULT_ROLES, FEATURES, type FeaturePermissions } from '@mms/shared';
+import { DEFAULT_ROLES, FEATURES, NO_ACCESS } from '@mms/shared';
 import { requireDatabaseUrl } from '../env.ts';
 import { createDb, type Db, type Tx } from './client.ts';
 import {
@@ -38,13 +38,6 @@ export interface SeedInput {
 }
 
 const CHUNK_SIZE = 500;
-const NO_ACCESS: FeaturePermissions = {
-  view: false,
-  create: false,
-  edit: false,
-  delete: false,
-  export: false,
-};
 
 export async function seed(db: Db, input: SeedInput): Promise<SeedSummary> {
   // Validate both files before touching the database.

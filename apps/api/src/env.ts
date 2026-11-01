@@ -1,17 +1,4 @@
-import { z } from 'zod';
-
-// Minimal for now; the full fail-fast config loader (every §2.3 variable) arrives in Step 0.6.
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().int().positive().default(3000),
-});
-
-export type Env = z.infer<typeof envSchema>;
-
-export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  return envSchema.parse(source);
-}
-
+/** For CLI scripts (migrate, seed, reset) that only need a database URL. The server uses config.ts. */
 export function requireDatabaseUrl(name: 'DATABASE_URL' | 'DATABASE_URL_TEST'): string {
   const value = process.env[name];
   if (!value) {

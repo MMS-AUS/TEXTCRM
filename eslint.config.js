@@ -29,6 +29,8 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      // Underscore marks a parameter that must exist for the signature (e.g. Express error handlers).
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
   {
@@ -47,6 +49,10 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
+  },
+  {
+    files: ['apps/web/src/test/**', 'apps/web/src/**/*.test.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
   prettier,
 );
