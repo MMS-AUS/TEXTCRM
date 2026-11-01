@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+coverage/
+package-lock.json
+legacy-reference/
+claude_code_CRM_SECRETS.md
+apps/api/drizzle/

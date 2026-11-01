@@ -1,0 +1,26 @@
+﻿# --- Secrets: NEVER commit ---
+claude_code_CRM_SECRETS.md
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+
+# --- Dependencies / build output ---
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+.cache/
+
+# --- Local data, logs, OS/editor files ---
+*.log
+*.local
+pgdata/
+backups/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

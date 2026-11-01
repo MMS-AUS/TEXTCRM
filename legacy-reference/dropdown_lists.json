@@ -1,0 +1,480 @@
+{
+  "panelBrands": [
+    "AIKO Solar",
+    "Jinko Solar (Tiger Neo)",
+    "Trina Solar (Vertex S+)",
+    "Canadian Solar",
+    "LONGi Solar",
+    "REC Alpha Pure",
+    "Jinko Solar Co Ltd",
+    "Trina Solar Co Ltd",
+    "Wuxi Suntech Power Co Ltd",
+    "Hengdian Group DMEGC Magnetics Co Ltd",
+    "LONGi Green Energy Technology Co Ltd",
+    "JiangSu Seraphim Solar System Co Ltd",
+    "Seraphim Solar System Co Ltd",
+    "Risen Energy Co Ltd"
+  ],
+  "inverterBrands": [
+    "Fronius (Primo/Symo Gen24)",
+    "Sungrow (SG/SH Series)",
+    "Enphase (IQ8 Microinverters)",
+    "SolarEdge (Home Wave)",
+    "Sigenergy (SigenStor)",
+    "GoodWe",
+    "FOXESS Co Ltd",
+    "Fronius Australia Pty Ltd",
+    "Ginlong Technologies Co Ltd",
+    "GoodWe Technologies Co Ltd",
+    "Shenzhen SOFARSOLAR Co Ltd",
+    "SMA Australia Pty Ltd",
+    "SolarEdge Technologies (Australia) PTY LTD",
+    "SolaX Power Network Technology (Zhe jiang) Co Ltd",
+    "SolaX Power Network Technology Zhejiang Co Ltd",
+    "SolaX Power Network Technology (Zhejiang) Co Ltd",
+    "Sungrow Power Supply Co Ltd",
+    "Shenzhen Growatt New Energy Co Ltd",
+    "Wuxi Solinteg Power Co Ltd"
+  ],
+  "batteryBrands": [
+    "Tesla Powerwall 3 (13.5kWh)",
+    "Sungrow SBR Battery (9.6kWh - 19.2kWh)",
+    "Sigenergy SigenStor (8kWh - 48kWh)",
+    "BYD Battery-Box Premium",
+    "Enphase IQ Battery 5P",
+    "Alpha ESS Co Ltd",
+    "FOXESS Co Ltd",
+    "Fronius International GmbH",
+    "GoodWe Technologies Co Ltd",
+    "Shenzhen SOFAR SOLAR Co Ltd",
+    "SMA Solar Technology AG",
+    "SofarSolar Ausco Pty Ltd",
+    "SolaX Power Network Technology (Zhe jiang) Co Ltd",
+    "SolaX Power Network Technology (Zhejiang) Co Ltd",
+    "SONNEN AUSTRALIA PTY LIMITED",
+    "Sungrow Power Supply Co Ltd",
+    "Tesla Inc",
+    "Pylon Technologies Co Ltd",
+    "Shenzhen Growatt New Energy Co Ltd",
+    "Shanwei BYD Auto Co Ltd",
+    "Shenzhen BYD Electronics Co Ltd"
+  ],
+  "leadSources": [
+    "Meta Ads (NSW High Efficiency)",
+    "Meta Ads (QLD Battery Rebate)",
+    "Google Search & PMax",
+    "OpenSolar Lead Form",
+    "Customer Referral",
+    "SolarQuotes.com.au"
+  ],
+  "roofTypes": [
+    "Colorbond / Metal Sheet",
+    "Concrete Tile",
+    "Terracotta Tile",
+    "Klip-lok Metal",
+    "Slate",
+    "Commercial Flat Roof"
+  ],
+  "projectStatuses": [
+    "Active",
+    "Completed",
+    "Closed",
+    "Lost"
+  ],
+  "ticketCategories": [
+    "Inverter Fault / Error Code",
+    "WiFi Monitoring Drop",
+    "Panel Damage / Shading",
+    "Switchboard Trip",
+    "Roof Leak Inspection",
+    "General Query"
+  ],
+  "ticketPriorities": [
+    "Low",
+    "Medium",
+    "High",
+    "Urgent"
+  ],
+  "dnspsNSW": [
+    "Ausgrid (Sydney/Central Coast/Hunter)",
+    "Endeavour Energy (Western Sydney/South Coast)",
+    "Essential Energy (Regional NSW)"
+  ],
+  "dnspsQLD": [
+    "Energex (South East QLD/Brisbane/Gold Coast)",
+    "Ergon Energy (Regional QLD)"
+  ],
+  "employeeDepartments": [
+    "Management",
+    "Sales",
+    "Operations",
+    "Warehouse",
+    "Customer Support",
+    "Engineering"
+  ],
+  "referralPaymentStatuses": [
+    "Pending Review",
+    "Approved for Payment",
+    "Paid via EFT",
+    "On Hold",
+    "Rejected"
+  ],
+  "states": [
+    "NSW",
+    "QLD",
+    "VIC",
+    "WA",
+    "SA",
+    "TAS",
+    "ACT",
+    "NT"
+  ],
+  "areas": [
+    "Metro",
+    "Regional",
+    "Rural",
+    "Remote"
+  ],
+  "contactTypes": [
+    "Residential",
+    "Commercial",
+    "Subcontractor",
+    "Vendor",
+    "Government / Council",
+    "Partner"
+  ],
+  "companyTypes": [
+    "Commercial Customer",
+    "Subcontractor Installer",
+    "Equipment Vendor",
+    "Engineering Consultant",
+    "Wholesaler / Distributor"
+  ],
+  "platforms": [
+    "Meta",
+    "Google Ads",
+    "Website",
+    "Energy Matters",
+    "Referral",
+    "Inbound",
+    "Quote 8",
+    "3 Quotes"
+  ],
+  "salesPersons": [
+    "Simon",
+    "Lavanya",
+    "Akash Mohite",
+    "Micky",
+    "Neivedha"
+  ],
+  "leadStatuses": [
+    "New",
+    "Contacted",
+    "Site Survey Scheduled",
+    "Proposal Sent",
+    "Contract Signed",
+    "Deposit Received",
+    "Converted to Project",
+    "Lost"
+  ],
+  "houseStoreys": [
+    "Single Storey",
+    "Double Storey",
+    "Triple Storey",
+    "Split Level",
+    "Commercial Multi-Level"
+  ],
+  "phases": [
+    "Single Phase",
+    "Three Phase",
+    "Split Phase"
+  ],
+  "docsReceivedOptions": [
+    "Yes",
+    "No",
+    "Partially Received",
+    "Pending DNSP Pre-Approval",
+    "Pending Council DA / Heritage"
+  ],
+  "existingSystemTemplates": [
+    "No existing solar installed (Brand new installation)",
+    "Existing 1.5kW System with 8 x 190W panels + Sharp Inverter (To be decommissioned)",
+    "Existing 3.0kW System with 12 x 250W panels + Sunny Boy Inverter (Retain existing string)",
+    "Existing 5.0kW System with 15 x 330W panels + Fronius Primo (Add AC Coupled Battery)",
+    "Existing 6.6kW System with 18 x 370W panels + Sungrow SG5.0RS (Upgrade to Hybrid & Battery)",
+    "Existing Solar Hot Water system on North pitch (Roof space constraint)",
+    "Existing 3-Phase Solar 10kW with SolarEdge Optimizers"
+  ],
+  "projectStages": [
+    "Engineering & DNSP Approval",
+    "Sales Order Created (Warehouse)",
+    "Subcontractor RFQ / Quoting",
+    "Install Scheduled",
+    "Installation in Progress",
+    "Installation Completed",
+    "Clean Energy Regulator (STC Claim)",
+    "DNSP Grid Inspection & Metering",
+    "Completed"
+  ],
+  "ebCustomerNameMatchOptions": [
+    "Yes",
+    "No",
+    "Pending Rectification"
+  ],
+  "ebAddressMatchOptions": [
+    "Yes",
+    "No",
+    "Pending Land Title / Sub-lot"
+  ],
+  "ebMeterMatchOptions": [
+    "Yes",
+    "No",
+    "Discrepancy Flagged"
+  ],
+  "ebMeterPhaseOptions": [
+    "Single Phase",
+    "Three Phase",
+    "Two Phase / Split"
+  ],
+  "ebOpenSolarSystemMatchOptions": [
+    "Yes",
+    "No",
+    "Variance Verified"
+  ],
+  "ebOpenSolarPricingMatchOptions": [
+    "Yes",
+    "No",
+    "Discrepancy Adjusted"
+  ],
+  "electricityDistributors": [
+    "Ausgrid",
+    "Endeavour Energy",
+    "Essential Energy",
+    "Energex",
+    "Ergon Energy",
+    "Powercor",
+    "CitiPower",
+    "Jemena",
+    "United Energy",
+    "SA Power Networks",
+    "Western Power"
+  ],
+  "energyRetailers": [
+    "Origin Energy",
+    "AGL Energy",
+    "EnergyAustralia",
+    "Red Energy",
+    "Alinta Energy",
+    "Powershop",
+    "Amber Electric",
+    "Dodo Power & Gas",
+    "OVO Energy",
+    "GloBird Energy"
+  ],
+  "gridApplicationStatuses": [
+    "Not Started",
+    "Grid Applied",
+    "Grid Under Review",
+    "Grid App Approved",
+    "Grid Rejected",
+    "Resubmitted"
+  ],
+  "installationStatuses": [
+    "Unscheduled",
+    "Booked / Scheduled",
+    "Installer Dispatched",
+    "In Progress",
+    "Installation Completed",
+    "Closed",
+    "Cancelled",
+    "Complete"
+  ],
+  "installers": [
+    "Apex Solar Electrical (CEC #A19283)",
+    "Sydney Metro Sparkies (CEC #A49102)",
+    "SunRun Contracting (CEC #A77219)",
+    "Direct Solar Contractors NSW",
+    "Brisbane Eco Electrical QLD"
+  ],
+  "installationBookedByOptions": [
+    "Akash Mohite",
+    "Micky",
+    "Lavanya"
+  ],
+  "installationMonths": [
+    "January 2026",
+    "February 2026",
+    "March 2026",
+    "April 2026",
+    "May 2026",
+    "June 2026",
+    "July 2026",
+    "August 2026",
+    "September 2026",
+    "October 2026",
+    "November 2026",
+    "December 2026"
+  ],
+  "installationDocsStatuses": [
+    "Pending",
+    "Uploaded",
+    "Under Review",
+    "Verified & SAA Approved",
+    "Rectification Required"
+  ],
+  "installerInvoiceStatuses": [
+    "Pending Approval",
+    "Approved",
+    "Paid",
+    "Disputed",
+    "On Hold"
+  ],
+  "warehouses": [
+    "Sydney Central DC (Alexandria)",
+    "Brisbane North Hub (Eagle Farm)",
+    "Melbourne West Warehouse (Truganina)",
+    "Adelaide Logistics Depot",
+    "Perth Distribution Centre"
+  ],
+  "warehouseInvoiceStatuses": [
+    "Draft",
+    "Awaiting Dispatch",
+    "Invoiced",
+    "Paid",
+    "Reconciled"
+  ],
+  "stockStatuses": [
+    "In Stock",
+    "Allocated to Job",
+    "Awaiting Shipment",
+    "Dispatched to Site",
+    "Delivered & Installed"
+  ],
+  "isFinanceOptions": [
+    "No (Cash / Direct Payment)",
+    "Yes (Green Finance)",
+    "Yes (Interest Free)",
+    "Conditional Finance"
+  ],
+  "financeCompanies": [
+    "Brighte",
+    "Plenti",
+    "Community First Credit Union",
+    "Humm",
+    "Handepay",
+    "RateSetter",
+    "Parker Lane"
+  ],
+  "financeStatuses": [
+    "Not Applicable",
+    "Application Draft",
+    "Submitted",
+    "Conditionally Approved",
+    "Unconditionally Approved",
+    "Settled",
+    "Declined"
+  ],
+  "stcPortals": [
+    "BridgeSelect",
+    "Green Energy Trading (GET)",
+    "Clean Energy Trading",
+    "TradeSTCs",
+    "REC Registry"
+  ],
+  "stcStatuses": [
+    "Pending Upload",
+    "Pre-Validation Passed",
+    "Submitted to CER",
+    "Approved & Traded",
+    "Audit Flagged",
+    "Paid"
+  ],
+  "ticketIssueRecordedOptions": [
+    "Inverter Fault / Red Alarm Light",
+    "No Generation / Zero Daily Yield",
+    "Error Code (e.g. Ground Fault / Isolation Error)",
+    "Battery Discharging Failure / Offline",
+    "Monitoring Dongle Offline / Wi-Fi Drop",
+    "Solar System Tripping Circuit Breaker",
+    "Panel Hotspot / Visible Damage",
+    "Roof Leak Near Solar Brackets",
+    "Smart Meter Interval Misalignment",
+    "Physical Damage / Storm Impact"
+  ],
+  "ticketInitialCheckOptions": [
+    "Remote Portal Telemetry Verification",
+    "DC Isolator Check (Passed)",
+    "AC Main Switch Check (Passed)",
+    "Inverter Error Code Diagnostic Run",
+    "Battery State of Charge (SoC) Inspection",
+    "Grid Overvoltage Tripping Check",
+    "Wi-Fi RSSI Signal Check",
+    "Customer Troubleshooting Guided via Phone",
+    "Physical On-Site Inspection Required",
+    "Pending Initial Field Dispatch"
+  ],
+  "ticketWorkRequiredOptions": [
+    "Inverter Replacement under Manufacturer Warranty",
+    "Firmware Upgrade & Inverter Re-commissioning",
+    "Replace Faulty DC Isolator / Rewire Cable",
+    "Panel Replacement & Recalibration",
+    "Wi-Fi Dongle Replacement & Setup",
+    "Battery Module Swap / BMS Reset",
+    "Switchboard RCD / Circuit Breaker Upgrade",
+    "Roof Flashing & Sealant Rectification",
+    "Re-torque Solar Clamps & Rail Grounding",
+    "General System Health Check & Clean"
+  ],
+  "ticketIssueResolutionStatuses": [
+    "Under Investigation",
+    "Troubleshooting in Progress",
+    "Warranty Claim Logged with Brand",
+    "Awaiting Replacement Hardware",
+    "Technician Dispatched",
+    "On-Site Work Completed",
+    "Monitoring Stable & Verified",
+    "Resolved - Complete Handover",
+    "Claim Denied by Manufacturer",
+    "Customer Closed"
+  ],
+  "ticketWarrantyClaimStatuses": [
+    "Not Applicable",
+    "Draft Claim",
+    "Submitted to Manufacturer",
+    "RMA (Return Merchandise Auth) Issued",
+    "Replacement Dispatched by Brand",
+    "Replacement Received & Tested",
+    "Warranty Approved & Credited",
+    "Warranty Rejected / Out of Scope"
+  ],
+  "ticketWarrantyClaimInvoiceStatuses": [
+    "Pending Claim Review",
+    "Claim Approved - Awaiting Credit",
+    "Manufacturer Rebate Received",
+    "Invoice Paid",
+    "No Charge / Full Warranty Replacement",
+    "Disputed with Brand"
+  ],
+  "ticketBrandNotesPresets": [
+    "Claim submitted via Sungrow Service Portal. RMA number pending review.",
+    "Tesla Energy case logged. Certified Powerwall technician dispatch requested.",
+    "Fronius SOS portal warranty claim approved. Replacement unit shipped from Melbourne warehouse.",
+    "AIKO Solar technical support verified cell defect from electroluminescence photos.",
+    "Enphase Enlighten warranty swap approved. RMA tracking provided.",
+    "Sigenergy automated diagnostics uploaded to cloud support desk."
+  ],
+  "ticketServiceIssueNotesPresets": [
+    "Customer noted inverter alarm started after weekend lightning storm.",
+    "Zero kWh generation verified on smart meter for 3 consecutive days.",
+    "Isolation resistance fault detected during early morning dew.",
+    "Monitoring app disconnected following NBN router upgrade; 2.4GHz network required.",
+    "Battery discharging stopped at 20% SoC; firmware recalibration recommended."
+  ],
+  "ticketInstallerNotesPresets": [
+    "Licensed CEC electrician attended site; tested DC voltage and found open circuit string 2.",
+    "Replaced faulty inverter under warranty; completed full commissioning and zero export test.",
+    "Installed replacement 440W panel, verified Voc and Isc, re-tested earth continuity.",
+    "Fixed loose Wi-Fi antenna connection; confirmed cloud sync active on Sungrow iSolarCloud.",
+    "Checked roof penetration points; applied Sikaflex waterproof sealant and re-flashed bracket."
+  ]
+}
