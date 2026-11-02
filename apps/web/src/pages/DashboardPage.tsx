@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
+import { LogOut } from 'lucide-react';
 import { useAuth } from '../auth/auth-context.ts';
 import { ApiStatus } from '../components/ApiStatus.tsx';
+import { BrandMark } from '../components/BrandMark.tsx';
+import { ThemeToggle } from '../components/ThemeToggle.tsx';
 import { useTRPC } from '../lib/trpc.ts';
+import { Button, Card, CardContent, Skeleton } from '../ui/index.ts';
 
-/** Placeholder behind RequireAuth until the real dashboard (Step 2.9). */
+/** Placeholder behind RequireAuth until the app shell (Step 1.3) and real dashboard (Step 2.9). */
 export function DashboardPage() {
   const { state, signOut } = useAuth();
   const trpc = useTRPC();
@@ -14,40 +18,58 @@ export function DashboardPage() {
   const { profile } = state;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
-        <span className="font-semibold tracking-tight">MMS CRM</span>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="hidden text-slate-600 sm:inline">{profile.email}</span>
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            className="rounded-md border border-slate-300 px-3 py-1.5 hover:bg-slate-100"
-          >
-            Sign out
-          </button>
+    <div className="min-h-screen">
+      <header className="border-b border-line bg-surface">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-3 px-4 sm:px-6">
+          <div className="flex items-center gap-2.5">
+            <BrandMark />
+            <span className="font-semibold tracking-tight">MMS CRM</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-fg-muted sm:inline">{profile.email}</span>
+            <ThemeToggle />
+            <Button size="sm" onClick={() => void signOut()}>
+              <LogOut />
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
-      <main className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+      <main className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-semibold tracking-tight">Welcome, {profile.name}</h1>
-        <dl className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <dt className="text-xs text-slate-500">Role</dt>
-            <dd className="mt-1 font-medium">{profile.role.name}</dd>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <dt className="text-xs text-slate-500">Option lists</dt>
-            <dd className="mt-1 font-medium" data-testid="option-list-count">
-              {lists.isPending ? '…' : lists.isError ? 'unavailable' : lists.data.length}
-            </dd>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <dt className="text-xs text-slate-500">Status</dt>
-            <dd className="mt-1">
-              <ApiStatus />
-            </dd>
-          </div>
-        </dl>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Card>
+            <CardContent>
+              <p className="text-sm text-fg-muted">Role</p>
+              <div className="mt-1 text-lg font-semibold">{profile.role.name}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <p className="text-sm text-fg-muted">Option lists</p>
+              <div
+                className="mt-1 text-lg font-semibold tabular-nums"
+                data-testid="option-list-count"
+              >
+                {lists.isPending ? (
+                  <Skeleton className="mt-1.5 h-4 w-8" />
+                ) : lists.isError ? (
+                  'unavailable'
+                ) : (
+                  lists.data.length
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent>
+              <p className="text-sm text-fg-muted">Status</p>
+              <div className="mt-1.5">
+                <ApiStatus />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </div>
   );

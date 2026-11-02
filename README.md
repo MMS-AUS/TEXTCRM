@@ -43,6 +43,13 @@ Firebase ID token, and the API requires a verified Google identity in `ALLOWED_E
 (`role_permissions`); use `protectedProcedure` / `permissionProcedure(feature, action)` from
 `apps/api/src/trpc/trpc.ts` for every new procedure.
 
+## Design system
+
+Tokens (colours, type, radius, shadows; light + dark) live in `apps/web/src/index.css`; components
+in `apps/web/src/ui/` — import them from `ui/index.ts`. Screens use semantic colour utilities
+(`bg-surface`, `text-fg-muted`, `border-line`, …); Tailwind's default palette is switched off. Open
+http://localhost:5173/design to see every component and state (no sign-in needed).
+
 ## Scripts (run from the repo root)
 
 | Script                                                                   | Does                                                                 |

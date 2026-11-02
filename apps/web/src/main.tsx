@@ -13,7 +13,18 @@ const root = createRoot(rootElement);
 
 const config = parseWebEnv(import.meta.env);
 
-if (!config.ok) {
+// /design is a static component gallery: no data, so it needs no sign-in or Firebase config.
+// It moves into the router with the app shell (Step 1.3).
+// Loaded as a separate chunk, so the gallery adds nothing to the app bundle.
+if (window.location.pathname.replace(/\/+$/, '') === '/design') {
+  void import('./pages/design/DesignPage.tsx').then(({ DesignPage }) => {
+    root.render(
+      <StrictMode>
+        <DesignPage />
+      </StrictMode>,
+    );
+  });
+} else if (!config.ok) {
   root.render(
     <StrictMode>
       <ConfigErrorPage missing={config.missing} />
