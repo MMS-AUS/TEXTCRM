@@ -13,11 +13,13 @@ import {
   Pencil,
   Plus,
   Star,
+  StickyNote,
   Trash2,
   UserRoundX,
   Zap,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
 import { HistoryList } from '../../components/HistoryList.tsx';
@@ -228,7 +230,15 @@ function ContactView({ contact }: { contact: Contact }) {
           empty="No leads for this contact"
           items={contact.leads.map((lead) => ({
             id: lead.id,
-            title: [lead.suburb, lead.state].filter(Boolean).join(' ') || 'Lead',
+            title: (
+              <Link
+                to="/leads/$leadId"
+                params={{ leadId: lead.id }}
+                className="hover:text-accent-text hover:underline"
+              >
+                {[lead.suburb, lead.state].filter(Boolean).join(' ') || 'Lead'}
+              </Link>
+            ),
             meta: `Created ${formatDate(lead.createdAt)}`,
             badge: lead.status,
           }))}
@@ -454,8 +464,12 @@ function ContactView({ contact }: { contact: Contact }) {
         <Card className="lg:col-span-2">
           <CardContent>
             {/* Open on the first tab with something in it; a brand-new contact opens on History. */}
-            <Tabs defaultValue={tabs.find((tab) => tab.count > 0)?.value ?? 'history'}>
+            <Tabs defaultValue="activity">
               <TabsList>
+                <TabsTrigger value="activity">
+                  <StickyNote />
+                  Activity
+                </TabsTrigger>
                 {tabs.map((tab) => (
                   <TabsTrigger key={tab.value} value={tab.value}>
                     {tab.label}
@@ -472,6 +486,9 @@ function ContactView({ contact }: { contact: Contact }) {
                   {tab.content}
                 </TabsContent>
               ))}
+              <TabsContent value="activity">
+                <ActivityTimeline entityType="contact" entityId={contact.id} readOnly={archived} />
+              </TabsContent>
               <TabsContent value="history">
                 <HistoryList entries={contact.history} labels={CONTACT_FIELD_LABELS} />
               </TabsContent>

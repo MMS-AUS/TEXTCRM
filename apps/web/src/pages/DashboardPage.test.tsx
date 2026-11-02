@@ -8,6 +8,7 @@ describe('DashboardPage', () => {
 
   const responses = {
     'health.ping': { status: 'ok' },
+    'activities.myTasks': [],
     'optionLists.list': [
       { key: 'phases', name: 'Phases', activeOptions: 3 },
       { key: 'states', name: 'States', activeOptions: 8 },

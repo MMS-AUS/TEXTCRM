@@ -1,4 +1,10 @@
-import { COMPANY_SORTS, CONTACT_SORTS } from '@mms/shared';
+import {
+  AU_STATES,
+  COMPANY_SORTS,
+  CONTACT_SORTS,
+  LEAD_SORTS,
+  ownerFilterSchema,
+} from '@mms/shared';
 import { z } from 'zod';
 
 // URL search params of the list pages (?q=…&page=2&sort=name). Every key is optional and an
@@ -30,5 +36,23 @@ export const companiesSearchSchema = z.object({
   sort: z.enum(COMPANY_SORTS).optional().catch(undefined),
 });
 export type CompaniesSearch = z.output<typeof companiesSearchSchema>;
+
+const isoDate = z.iso.date().optional().catch(undefined);
+
+export const leadsSearchSchema = z.object({
+  q: common.q,
+  status: z.array(z.string().max(100)).max(20).optional().catch(undefined),
+  platform: common.type,
+  owner: ownerFilterSchema.optional().catch(undefined),
+  state: z.enum(AU_STATES).optional().catch(undefined),
+  from: isoDate,
+  to: isoDate,
+  deleted: common.archived,
+  page: common.page,
+  size: common.size,
+  sort: z.enum(LEAD_SORTS).optional().catch(undefined),
+  desc: common.desc,
+});
+export type LeadsSearch = z.output<typeof leadsSearchSchema>;
 
 export { PAGE_SIZES };

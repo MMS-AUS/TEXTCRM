@@ -14,7 +14,13 @@ import { ContactsPage } from '../pages/contacts/ContactsPage.tsx';
 import { DashboardPage } from '../pages/DashboardPage.tsx';
 import { ErrorPage } from '../pages/ErrorPage.tsx';
 import { NotFoundPage } from '../pages/NotFoundPage.tsx';
-import { companiesSearchSchema, contactsSearchSchema } from '../pages/list-search.ts';
+import { LeadDetailPage } from '../pages/leads/LeadDetailPage.tsx';
+import { LeadsPage } from '../pages/leads/LeadsPage.tsx';
+import {
+  companiesSearchSchema,
+  contactsSearchSchema,
+  leadsSearchSchema,
+} from '../pages/list-search.ts';
 import { FeatureGate, PlaceholderPage } from '../pages/PlaceholderPage.tsx';
 import { Toaster } from '../ui/index.ts';
 import { SETTINGS_FEATURES } from './nav.ts';
@@ -69,13 +75,21 @@ const dashboardRoute = createRoute({
 const leadsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/leads',
+  validateSearch: leadsSearchSchema,
   component: () => (
-    <PlaceholderPage
-      title="Leads"
-      description="Every enquiry from Meta, Google, the website and referrals."
-      step="Step 2.2"
-      features={['leads']}
-    />
+    <FeatureGate title="Leads" features={['leads']}>
+      <LeadsPage />
+    </FeatureGate>
+  ),
+});
+
+const leadDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/leads/$leadId',
+  component: () => (
+    <FeatureGate title="Leads" features={['leads']}>
+      <LeadDetailPage />
+    </FeatureGate>
   ),
 });
 
@@ -166,6 +180,7 @@ export const routeTree = rootRoute.addChildren([
     indexRoute,
     dashboardRoute,
     leadsRoute,
+    leadDetailRoute,
     contactsRoute,
     contactDetailRoute,
     companiesRoute,

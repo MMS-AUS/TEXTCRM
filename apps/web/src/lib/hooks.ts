@@ -47,6 +47,12 @@ export function useCan() {
     hasPermission(permissions, feature, action);
 }
 
+/** Active staff for owner/assignee pickers; cached for five minutes. */
+export function useUsers() {
+  const trpc = useTRPC();
+  return useQuery({ ...trpc.users.options.queryOptions(), staleTime: 5 * 60_000 });
+}
+
 /** Active options of option lists, as Select options; cached for five minutes. */
 export function useOptions<const K extends string>(keys: readonly K[]) {
   const trpc = useTRPC();

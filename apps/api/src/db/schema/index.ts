@@ -6,3 +6,4 @@ export * from './options.ts';
 export * from './projects.ts';
 export * from './tickets.ts';
 export * from './users.ts';
+export * from './activities.ts';

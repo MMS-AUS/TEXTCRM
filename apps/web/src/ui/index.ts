@@ -17,6 +17,7 @@ export {
   type DataTableFeatures,
 } from './data-table-columns.ts';
 export { DataTable, type DataTableProps } from './DataTable.tsx';
+export { DateInput } from './DateInput.tsx';
 export {
   Dialog,
   DialogBody,

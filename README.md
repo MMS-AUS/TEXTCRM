@@ -70,6 +70,7 @@ renders inside the protected layout and app shell (`apps/web/src/app/`).
 | `npm run db:generate`                                                    | Write a new SQL migration after changing `apps/api/src/db/schema/`   |
 | `npm run db:migrate`                                                     | Apply pending migrations to `DATABASE_URL`                           |
 | `npm run db:seed`                                                        | Idempotent reference-data seed (safe to re-run)                      |
+| `npm run db:fake-leads [-- --count 10000]` / `-- --remove`               | **Dev only:** add / remove made-up leads for performance testing     |
 | `npm run db:studio`                                                      | Drizzle Studio — browse the database                                 |
 | `npm run db:reset`                                                       | **Dev only:** wipe the local database and re-apply migrations        |
 | `npm run user:create -w @mms/api -- --email … --name "…" [--role admin]` | Add or re-activate an allowlisted user                               |

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useProfile } from '../auth/auth-context.ts';
 import { ApiStatus } from '../components/ApiStatus.tsx';
+import { MyTasks } from '../components/MyTasks.tsx';
 import { PageHeader } from '../components/PageHeader.tsx';
 import { useTRPC } from '../lib/trpc.ts';
 import { Card, CardContent, Skeleton } from '../ui/index.ts';
@@ -50,6 +51,9 @@ export function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+      <div className="max-w-2xl">
+        <MyTasks />
       </div>
     </div>
   );
