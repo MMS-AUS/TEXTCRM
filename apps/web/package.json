@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
+    "@hookform/resolvers": "^7.0.1",
     "@mms/shared": "*",
     "@tanstack/react-query": "^5.105.1",
     "@tanstack/react-router": "^1.170.46",
@@ -25,6 +26,7 @@
     "radix-ui": "^1.8.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "react-hook-form": "^7.91.0",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
   },

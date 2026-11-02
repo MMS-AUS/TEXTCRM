@@ -40,7 +40,7 @@ export function readThemeSettings(): ThemeSettings {
   const style = readStorage(STYLE_KEY);
   const mode = readStorage(MODE_KEY);
   return {
-    style: isOneOf(THEME_STYLES, style) ? style : 'graphite',
+    style: isOneOf(THEME_STYLES, style) ? style : 'mms',
     mode: isOneOf(THEME_MODES, mode) ? mode : 'system',
   };
 }

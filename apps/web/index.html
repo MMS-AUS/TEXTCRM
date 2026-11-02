@@ -8,10 +8,10 @@
     <script>
       // Apply the saved theme before first paint (no flash). Mirrors src/lib/theme.ts.
       (function () {
-        var style = 'graphite';
+        var style = 'mms';
         var mode = 'system';
         try {
-          style = localStorage.getItem('mms-theme-style') === 'mms' ? 'mms' : 'graphite';
+          style = localStorage.getItem('mms-theme-style') === 'graphite' ? 'graphite' : 'mms';
           mode = localStorage.getItem('mms-theme') || 'system';
         } catch (e) {}
         var dark =

@@ -1,5 +1,9 @@
 // The design system. Feature screens import from here and add no one-off styling (§3.0 rule 8).
+export { Alert } from './Alert.tsx';
 export { Avatar } from './Avatar.tsx';
+export { Combobox, type ComboboxOption } from './Combobox.tsx';
+export { textInput } from './form-helpers.ts';
+export { FormField } from './FormField.tsx';
 export { Badge, type BadgeProps, type BadgeTone } from './Badge.tsx';
 export { Button, IconButton, type ButtonProps, type IconButtonProps } from './Button.tsx';
 export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './Card.tsx';
@@ -38,7 +42,7 @@ export {
   DropdownMenuTrigger,
 } from './DropdownMenu.tsx';
 export { EmptyState, Skeleton } from './Feedback.tsx';
-export { Field, Label } from './Field.tsx';
+export { Field, Label, type FieldControlProps } from './Field.tsx';
 export { Input, Textarea, type InputProps, type TextareaProps } from './Input.tsx';
 export { Select, type SelectOption } from './Select.tsx';
 export { Spinner } from './Spinner.tsx';

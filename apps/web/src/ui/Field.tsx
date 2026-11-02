@@ -5,7 +5,7 @@ export function Label({ className, ...props }: ComponentProps<'label'>) {
   return <label className={cn('text-sm font-medium text-fg select-none', className)} {...props} />;
 }
 
-type ControlProps = {
+export type FieldControlProps = {
   id: string;
   invalid: boolean;
   'aria-describedby': string | undefined;
@@ -30,7 +30,7 @@ export function Field({
   error?: string;
   required?: boolean;
   className?: string;
-  children: (props: ControlProps) => ReactElement;
+  children: (props: FieldControlProps) => ReactElement;
 }) {
   const id = useId();
   const hintId = hint ? `${id}-hint` : undefined;

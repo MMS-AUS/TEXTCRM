@@ -1,5 +1,6 @@
 import { hasPermission, type Feature, type PermissionMatrix } from '@mms/shared';
 import {
+  Building2,
   FolderKanban,
   LayoutDashboard,
   LifeBuoy,
@@ -10,7 +11,7 @@ import {
 } from 'lucide-react';
 
 export type NavItem = {
-  to: '/dashboard' | '/leads' | '/contacts' | '/projects' | '/tickets' | '/settings';
+  to: '/dashboard' | '/leads' | '/contacts' | '/companies' | '/projects' | '/tickets' | '/settings';
   label: string;
   icon: LucideIcon;
   /** Shown when the role can view any of these features (the API enforces it as well). */
@@ -31,6 +32,7 @@ export const MAIN_NAV: readonly NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, features: ['dashboard'] },
   { to: '/leads', label: 'Leads', icon: Zap, features: ['leads'] },
   { to: '/contacts', label: 'Contacts', icon: UserRound, features: ['contacts'] },
+  { to: '/companies', label: 'Companies', icon: Building2, features: ['companies'] },
   { to: '/projects', label: 'Projects', icon: FolderKanban, features: ['projects'] },
   { to: '/tickets', label: 'Tickets', icon: LifeBuoy, features: ['tickets'] },
 ];

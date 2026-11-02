@@ -20,8 +20,8 @@ describe('theme', () => {
     localStorage.clear();
   });
 
-  it('defaults to Graphite following the system', () => {
-    expect(readThemeSettings()).toEqual({ style: 'graphite', mode: 'system' });
+  it('defaults to Make My Solar following the system', () => {
+    expect(readThemeSettings()).toEqual({ style: 'mms', mode: 'system' });
     mockSystemDark(true);
     expect(resolveMode('system')).toBe('dark');
     mockSystemDark(false);
@@ -31,7 +31,7 @@ describe('theme', () => {
   it('ignores unknown saved values', () => {
     localStorage.setItem('mms-theme-style', 'purple');
     localStorage.setItem('mms-theme', 'sepia');
-    expect(readThemeSettings()).toEqual({ style: 'graphite', mode: 'system' });
+    expect(readThemeSettings()).toEqual({ style: 'mms', mode: 'system' });
     localStorage.setItem('mms-theme-style', 'mms');
     localStorage.setItem('mms-theme', 'dark');
     expect(readThemeSettings()).toEqual({ style: 'mms', mode: 'dark' });

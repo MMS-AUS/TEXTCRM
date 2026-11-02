@@ -7,10 +7,15 @@ import {
   Outlet,
   type RouterHistory,
 } from '@tanstack/react-router';
+import { CompaniesPage } from '../pages/companies/CompaniesPage.tsx';
+import { CompanyDetailPage } from '../pages/companies/CompanyDetailPage.tsx';
+import { ContactDetailPage } from '../pages/contacts/ContactDetailPage.tsx';
+import { ContactsPage } from '../pages/contacts/ContactsPage.tsx';
 import { DashboardPage } from '../pages/DashboardPage.tsx';
 import { ErrorPage } from '../pages/ErrorPage.tsx';
 import { NotFoundPage } from '../pages/NotFoundPage.tsx';
-import { PlaceholderPage } from '../pages/PlaceholderPage.tsx';
+import { companiesSearchSchema, contactsSearchSchema } from '../pages/list-search.ts';
+import { FeatureGate, PlaceholderPage } from '../pages/PlaceholderPage.tsx';
 import { Toaster } from '../ui/index.ts';
 import { SETTINGS_FEATURES } from './nav.ts';
 import { ProtectedLayout, type AppServices } from './ProtectedLayout.tsx';
@@ -77,13 +82,42 @@ const leadsRoute = createRoute({
 const contactsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/contacts',
+  validateSearch: contactsSearchSchema,
   component: () => (
-    <PlaceholderPage
-      title="Contacts"
-      description="Customers and the companies they belong to."
-      step="Step 2.1"
-      features={['contacts']}
-    />
+    <FeatureGate title="Contacts" features={['contacts']}>
+      <ContactsPage />
+    </FeatureGate>
+  ),
+});
+
+const contactDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/contacts/$contactId',
+  component: () => (
+    <FeatureGate title="Contacts" features={['contacts']}>
+      <ContactDetailPage />
+    </FeatureGate>
+  ),
+});
+
+const companiesRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/companies',
+  validateSearch: companiesSearchSchema,
+  component: () => (
+    <FeatureGate title="Companies" features={['companies']}>
+      <CompaniesPage />
+    </FeatureGate>
+  ),
+});
+
+const companyDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/companies/$companyId',
+  component: () => (
+    <FeatureGate title="Companies" features={['companies']}>
+      <CompanyDetailPage />
+    </FeatureGate>
   ),
 });
 
@@ -133,6 +167,9 @@ export const routeTree = rootRoute.addChildren([
     dashboardRoute,
     leadsRoute,
     contactsRoute,
+    contactDetailRoute,
+    companiesRoute,
+    companyDetailRoute,
     projectsRoute,
     ticketsRoute,
     settingsRoute,
