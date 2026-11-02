@@ -94,7 +94,6 @@ export function IconButton({
   return (
     <Button
       aria-label={label}
-      title={label}
       variant={variant}
       size={size}
       loading={loading}

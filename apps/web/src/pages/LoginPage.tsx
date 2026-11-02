@@ -45,7 +45,7 @@ export function LoginPage() {
       <Card className="w-full max-w-sm shadow-sm">
         <CardContent className="flex flex-col gap-6 px-7 py-8">
           <div className="flex flex-col items-center gap-3 text-center">
-            <BrandMark className="size-10 rounded-lg [&_svg]:size-5" />
+            <BrandMark variant="square" size="lg" />
             <div>
               <h1 className="text-xl font-semibold tracking-tight">Sign in to MMS CRM</h1>
               <p className="mt-1 text-sm text-fg-muted">

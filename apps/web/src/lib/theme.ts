@@ -1,65 +1,112 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
-export const THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
-export type ThemePreference = (typeof THEME_PREFERENCES)[number];
-export type ResolvedTheme = 'light' | 'dark';
+/** Visual style: the neutral "Graphite" design or the Make My Solar brand. */
+export const THEME_STYLES = ['graphite', 'mms'] as const;
+export type ThemeStyle = (typeof THEME_STYLES)[number];
+
+export const THEME_MODES = ['light', 'dark', 'system'] as const;
+export type ThemeMode = (typeof THEME_MODES)[number];
+export type ResolvedMode = 'light' | 'dark';
+
+export type ThemeSettings = { style: ThemeStyle; mode: ThemeMode };
 
 // Keep in sync with the inline script in index.html.
-const STORAGE_KEY = 'mms-theme';
+const STYLE_KEY = 'mms-theme-style';
+const MODE_KEY = 'mms-theme';
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
-function isThemePreference(value: unknown): value is ThemePreference {
-  return THEME_PREFERENCES.some((pref) => pref === value);
+function isOneOf<T extends string>(options: readonly T[], value: unknown): value is T {
+  return options.some((option) => option === value);
 }
 
-export function readThemePreference(): ThemePreference {
+function readStorage(key: string): string | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return isThemePreference(stored) ? stored : 'system';
+    return localStorage.getItem(key);
   } catch {
-    // Storage blocked (private mode, site data disabled): follow the system.
-    return 'system';
+    // Storage blocked (private mode, site data disabled): use the defaults.
+    return null;
   }
+}
+
+function writeStorage(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Not persisted; the choice still applies for this visit.
+  }
+}
+
+export function readThemeSettings(): ThemeSettings {
+  const style = readStorage(STYLE_KEY);
+  const mode = readStorage(MODE_KEY);
+  return {
+    style: isOneOf(THEME_STYLES, style) ? style : 'graphite',
+    mode: isOneOf(THEME_MODES, mode) ? mode : 'system',
+  };
 }
 
 function systemPrefersDark(): boolean {
   return typeof window.matchMedia === 'function' && window.matchMedia(DARK_QUERY).matches;
 }
 
-export function resolveTheme(pref: ThemePreference): ResolvedTheme {
-  if (pref === 'system') return systemPrefersDark() ? 'dark' : 'light';
-  return pref;
+export function resolveMode(mode: ThemeMode): ResolvedMode {
+  if (mode === 'system') return systemPrefersDark() ? 'dark' : 'light';
+  return mode;
 }
 
-export function applyTheme(pref: ThemePreference): void {
-  document.documentElement.dataset.theme = resolveTheme(pref);
+/** The value of <html data-theme>, e.g. "mms-dark". */
+export function themeAttribute(settings: ThemeSettings): string {
+  return `${settings.style}-${resolveMode(settings.mode)}`;
 }
 
-/** The user's theme choice, persisted per browser; "system" follows the OS live. */
+export function applyTheme(settings: ThemeSettings): void {
+  document.documentElement.dataset.theme = themeAttribute(settings);
+}
+
+// One shared store, so every component (menus, logo) sees the same choice.
+let current = readThemeSettings();
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export function setThemeSettings(next: Partial<ThemeSettings>): void {
+  current = { ...current, ...next };
+  writeStorage(STYLE_KEY, current.style);
+  writeStorage(MODE_KEY, current.mode);
+  applyTheme(current);
+  for (const listener of listeners) listener();
+}
+
+/** The user's theme style + light/dark choice, persisted per browser; "system" follows the OS live. */
 export function useTheme() {
-  const [preference, setPreference] = useState<ThemePreference>(readThemePreference);
+  const settings = useSyncExternalStore(subscribe, () => current);
 
   useEffect(() => {
-    applyTheme(preference);
-    if (preference !== 'system' || typeof window.matchMedia !== 'function') return;
+    applyTheme(settings);
+    if (settings.mode !== 'system' || typeof window.matchMedia !== 'function') return;
     const media = window.matchMedia(DARK_QUERY);
     const onChange = () => {
-      applyTheme('system');
+      applyTheme(current);
     };
     media.addEventListener('change', onChange);
     return () => {
       media.removeEventListener('change', onChange);
     };
-  }, [preference]);
+  }, [settings]);
 
-  const setTheme = useCallback((pref: ThemePreference) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, pref);
-    } catch {
-      // Not persisted; the choice still applies for this visit.
-    }
-    setPreference(pref);
-  }, []);
-
-  return { preference, setTheme };
+  return {
+    style: settings.style,
+    mode: settings.mode,
+    setStyle: (style: ThemeStyle) => {
+      setThemeSettings({ style });
+    },
+    setMode: (mode: ThemeMode) => {
+      setThemeSettings({ mode });
+    },
+  };
 }

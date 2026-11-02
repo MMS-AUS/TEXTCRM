@@ -3,18 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="/mms-logo-square.png" />
     <title>MMS CRM</title>
     <script>
-      // Apply the saved theme before first paint (no light flash in dark mode). Mirrors src/lib/theme.ts.
+      // Apply the saved theme before first paint (no flash). Mirrors src/lib/theme.ts.
       (function () {
-        var pref = 'system';
+        var style = 'graphite';
+        var mode = 'system';
         try {
-          pref = localStorage.getItem('mms-theme') || 'system';
+          style = localStorage.getItem('mms-theme-style') === 'mms' ? 'mms' : 'graphite';
+          mode = localStorage.getItem('mms-theme') || 'system';
         } catch (e) {}
         var dark =
-          pref === 'dark' ||
-          (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+          mode === 'dark' ||
+          (mode !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = style + (dark ? '-dark' : '-light');
       })();
     </script>
   </head>

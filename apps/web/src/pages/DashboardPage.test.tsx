@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { cleanup, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { fakeAuth, fakeProfile, renderWithProviders } from '../test/render.tsx';
 import { DashboardPage } from './DashboardPage.tsx';
@@ -24,12 +24,5 @@ describe('DashboardPage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('option-list-count').textContent).toBe('2');
     });
-  });
-
-  it('signs out from the header', () => {
-    const auth = fakeAuth({ status: 'signedIn', profile: fakeProfile });
-    renderWithProviders(<DashboardPage />, { auth, responses });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
-    expect(auth.signOut).toHaveBeenCalledOnce();
   });
 });

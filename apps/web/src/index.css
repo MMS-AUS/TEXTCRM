@@ -2,16 +2,19 @@
 @import 'tailwindcss';
 
 /*
- * MMS CRM design tokens (Step 1.2, direction "Graphite" — see the bible §5.5).
+ * MMS CRM design tokens (Steps 1.1–1.2 — see the bible §5.5).
  *
  * Components use the semantic utilities below (bg-surface, text-fg-muted, border-line, …),
- * never raw colours, so light/dark is purely a token swap: <html data-theme="light|dark">,
- * set before first paint by the script in index.html.
+ * never raw colours, so switching theme is purely a token swap on <html data-theme>:
  *
- * Tailwind's default colour palette is switched off on purpose: if a colour isn't a token,
- * it doesn't belong in a screen.
+ *   graphite-light (the :root fallback) · graphite-dark · mms-light · mms-dark
+ *
+ * The attribute is set before first paint by the script in index.html and kept in sync by
+ * src/lib/theme.ts. Tailwind's default colour palette is switched off on purpose: if a colour
+ * isn't a token, it doesn't belong in a screen.
  */
 
+/* ── Graphite light (default) ───────────────────────────────────────────── */
 :root {
   color-scheme: light;
 
@@ -21,6 +24,7 @@
   --surface-raised: oklch(1 0 0);
   --surface-2: oklch(0.967 0.003 265); /* hover, muted fills */
   --surface-3: oklch(0.94 0.004 265); /* pressed, selected, skeleton */
+  --sidebar: oklch(0.975 0.003 265);
 
   --fg: oklch(0.21 0.012 265);
   --fg-muted: oklch(0.46 0.014 265);
@@ -29,7 +33,6 @@
   --line: oklch(0.922 0.004 265);
   --line-strong: oklch(0.87 0.006 265);
 
-  /* Accent — placeholder indigo until Make My Solar brand colours arrive (Task T-13) */
   --accent: oklch(0.53 0.2 277);
   --accent-hover: oklch(0.48 0.2 277);
   --accent-fg: oklch(1 0 0);
@@ -37,7 +40,8 @@
   --accent-text: oklch(0.47 0.19 277);
   --ring: oklch(0.53 0.2 277 / 0.4);
 
-  /* Solar amber — brand mark and highlights only, never body text */
+  /* Highlight: active navigation marker, tab underline. Sun: brand mark only. */
+  --highlight: var(--accent);
   --sun: oklch(0.79 0.16 72);
 
   --success: oklch(0.56 0.13 155);
@@ -54,6 +58,7 @@
   --info-subtle: oklch(0.96 0.022 240);
   --info-text: oklch(0.45 0.12 240);
 
+  --overlay: oklch(0.2 0.02 265 / 0.35);
   --shadow-color: 265 12% 20%;
   --elevation-xs: 0 1px 2px hsl(var(--shadow-color) / 0.06);
   --elevation-sm:
@@ -64,28 +69,10 @@
     0 4px 8px -4px hsl(var(--shadow-color) / 0.1), 0 24px 48px -12px hsl(var(--shadow-color) / 0.24);
 }
 
-:root[data-theme='dark'] {
+/* ── Shared by both dark themes: status colours, shadows ────────────────── */
+:root[data-theme='graphite-dark'],
+:root[data-theme='mms-dark'] {
   color-scheme: dark;
-
-  --canvas: oklch(0.155 0.006 270);
-  --surface: oklch(0.185 0.007 270);
-  --surface-raised: oklch(0.215 0.008 270);
-  --surface-2: oklch(0.225 0.008 270);
-  --surface-3: oklch(0.265 0.009 270);
-
-  --fg: oklch(0.955 0.004 270);
-  --fg-muted: oklch(0.72 0.01 270);
-  --fg-subtle: oklch(0.57 0.011 270);
-
-  --line: oklch(0.255 0.008 270);
-  --line-strong: oklch(0.32 0.01 270);
-
-  --accent: oklch(0.56 0.19 277);
-  --accent-hover: oklch(0.61 0.18 277);
-  --accent-fg: oklch(1 0 0);
-  --accent-subtle: oklch(0.29 0.07 277);
-  --accent-text: oklch(0.79 0.11 277);
-  --ring: oklch(0.65 0.17 277 / 0.5);
 
   --success: oklch(0.62 0.13 155);
   --success-subtle: oklch(0.28 0.05 155);
@@ -101,6 +88,7 @@
   --info-subtle: oklch(0.29 0.05 240);
   --info-text: oklch(0.82 0.09 240);
 
+  --overlay: oklch(0 0 0 / 0.55);
   --shadow-color: 270 40% 2%;
   --elevation-xs: 0 1px 2px hsl(var(--shadow-color) / 0.4);
   --elevation-sm:
@@ -108,6 +96,96 @@
   --elevation-md: 0 0 0 1px oklch(1 0 0 / 0.04), 0 8px 24px -4px hsl(var(--shadow-color) / 0.6);
   --elevation-lg: 0 0 0 1px oklch(1 0 0 / 0.05), 0 24px 56px -12px hsl(var(--shadow-color) / 0.75);
 }
+
+/* ── Graphite dark ──────────────────────────────────────────────────────── */
+:root[data-theme='graphite-dark'] {
+  --canvas: oklch(0.155 0.006 270);
+  --surface: oklch(0.185 0.007 270);
+  --surface-raised: oklch(0.215 0.008 270);
+  --surface-2: oklch(0.225 0.008 270);
+  --surface-3: oklch(0.265 0.009 270);
+  --sidebar: oklch(0.165 0.006 270);
+
+  --fg: oklch(0.955 0.004 270);
+  --fg-muted: oklch(0.72 0.01 270);
+  --fg-subtle: oklch(0.57 0.011 270);
+
+  --line: oklch(0.255 0.008 270);
+  --line-strong: oklch(0.32 0.01 270);
+
+  --accent: oklch(0.56 0.19 277);
+  --accent-hover: oklch(0.61 0.18 277);
+  --accent-fg: oklch(1 0 0);
+  --accent-subtle: oklch(0.29 0.07 277);
+  --accent-text: oklch(0.79 0.11 277);
+  --ring: oklch(0.65 0.17 277 / 0.5);
+  --highlight: var(--accent);
+}
+
+/*
+ * ── Make My Solar light ────────────────────────────────────────────────────
+ * Brand colours sampled from the logo: navy #2C3691, blue #0976BC, sun #FED81A → #F7941D → #EB4B3A.
+ */
+:root[data-theme='mms-light'] {
+  --canvas: #ffffff;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-2: #f3f5fa;
+  --surface-3: #e8ecf5;
+  --sidebar: #ffffff;
+
+  --fg: #161b3d;
+  --fg-muted: #4e5578;
+  --fg-subtle: #7c829f;
+
+  --line: #e3e6ef;
+  --line-strong: #cfd4e2;
+
+  --accent: #2c3691;
+  --accent-hover: #232b78;
+  --accent-fg: #ffffff;
+  --accent-subtle: #eceefa;
+  --accent-text: #2c3691;
+  --ring: rgb(9 118 188 / 0.4);
+
+  --highlight: #f7941d;
+  --sun: #f7941d;
+  --info: #0976bc;
+  --info-subtle: #e6f2fa;
+  --info-text: #075f98;
+
+  --shadow-color: 232 50% 22%;
+}
+
+/* ── Make My Solar dark: deep navy, with the blue and orange doing the talking ── */
+:root[data-theme='mms-dark'] {
+  --canvas: #0a0f24;
+  --surface: #10173a;
+  --surface-raised: #161e47;
+  --surface-2: #172049;
+  --surface-3: #1f2a5a;
+  --sidebar: #0c1230;
+
+  --fg: #eef1fb;
+  --fg-muted: #a8b0d0;
+  --fg-subtle: #7a83a8;
+
+  --line: #1f2851;
+  --line-strong: #2c3866;
+
+  --accent: #0976bc;
+  --accent-hover: #1689d4;
+  --accent-fg: #ffffff;
+  --accent-subtle: #0d2b52;
+  --accent-text: #6dbcf0;
+  --ring: rgb(56 160 230 / 0.5);
+
+  --highlight: #f7941d;
+  --sun: #f7941d;
+}
+
+/* dark: = either dark theme. Only for rare cases tokens can't cover (e.g. the logo plate). */
+@custom-variant dark (&:where([data-theme$='-dark'], [data-theme$='-dark'] *));
 
 @theme inline {
   --color-*: initial;
@@ -118,6 +196,7 @@
   --color-surface-raised: var(--surface-raised);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-sidebar: var(--sidebar);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-fg-subtle: var(--fg-subtle);
@@ -129,6 +208,7 @@
   --color-accent-subtle: var(--accent-subtle);
   --color-accent-text: var(--accent-text);
   --color-ring: var(--ring);
+  --color-highlight: var(--highlight);
   --color-sun: var(--sun);
   --color-success: var(--success);
   --color-success-subtle: var(--success-subtle);
@@ -143,6 +223,7 @@
   --color-info: var(--info);
   --color-info-subtle: var(--info-subtle);
   --color-info-text: var(--info-text);
+  --color-overlay: var(--overlay);
 
   --shadow-xs: var(--elevation-xs);
   --shadow-sm: var(--elevation-sm);
@@ -176,11 +257,29 @@
   --radius-xl: 0.75rem;
 
   --animate-pop-in: pop-in 120ms ease-out;
+  --animate-fade-in: fade-in 150ms ease-out;
+  --animate-slide-in-left: slide-in-left 200ms cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-slide-in-right: slide-in-right 200ms cubic-bezier(0.32, 0.72, 0, 1);
 
   @keyframes pop-in {
     from {
       opacity: 0;
       transform: scale(0.97) translateY(-2px);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes slide-in-left {
+    from {
+      transform: translateX(-100%);
+    }
+  }
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
     }
   }
 }

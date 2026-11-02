@@ -45,10 +45,15 @@ Firebase ID token, and the API requires a verified Google identity in `ALLOWED_E
 
 ## Design system
 
-Tokens (colours, type, radius, shadows; light + dark) live in `apps/web/src/index.css`; components
-in `apps/web/src/ui/` — import them from `ui/index.ts`. Screens use semantic colour utilities
-(`bg-surface`, `text-fg-muted`, `border-line`, …); Tailwind's default palette is switched off. Open
-http://localhost:5173/design to see every component and state (no sign-in needed).
+Tokens (colours, type, radius, shadows) live in `apps/web/src/index.css` for two theme styles —
+Graphite and Make My Solar — each in light and dark (`<html data-theme="mms-dark">` etc., chosen
+from the palette menu). Components are in `apps/web/src/ui/` — import them from `ui/index.ts`.
+Screens use semantic colour utilities (`bg-surface`, `text-fg-muted`, `border-line`, …); Tailwind's
+default palette is switched off. Open http://localhost:5173/design to see every component and state
+(no sign-in needed).
+
+Routes are defined in `apps/web/src/app/router.tsx` (TanStack Router); every page except `/design`
+renders inside the protected layout and app shell (`apps/web/src/app/`).
 
 ## Scripts (run from the repo root)
 

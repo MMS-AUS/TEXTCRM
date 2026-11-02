@@ -23,3 +23,10 @@ export function useAuth(): AuthContextValue {
   if (!value) throw new Error('useAuth must be used inside <AuthProvider>');
   return value;
 }
+
+/** The signed-in user's profile. Only for components rendered inside <RequireAuth>. */
+export function useProfile(): Profile {
+  const { state } = useAuth();
+  if (state.status !== 'signedIn') throw new Error('useProfile must be used inside <RequireAuth>');
+  return state.profile;
+}

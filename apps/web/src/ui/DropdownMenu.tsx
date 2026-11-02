@@ -67,6 +67,25 @@ export function DropdownMenuCheckboxItem({
   );
 }
 
+export const DropdownMenuRadioGroup = Menu.RadioGroup;
+
+export function DropdownMenuRadioItem({
+  className,
+  children,
+  ...props
+}: ComponentProps<typeof Menu.RadioItem>) {
+  return (
+    <Menu.RadioItem className={cn(itemBase, 'pl-8', className)} {...props}>
+      <span className="absolute left-2 flex size-4 items-center justify-center">
+        <Menu.ItemIndicator>
+          <span className="block size-1.5 rounded-full bg-fg" />
+        </Menu.ItemIndicator>
+      </span>
+      {children}
+    </Menu.RadioItem>
+  );
+}
+
 export function DropdownMenuLabel({ className, ...props }: ComponentProps<typeof Menu.Label>) {
   return (
     <Menu.Label

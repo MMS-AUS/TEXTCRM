@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { BrandMark } from '../../components/BrandMark.tsx';
-import { ThemeToggle } from '../../components/ThemeToggle.tsx';
+import { ThemeMenu } from '../../components/ThemeMenu.tsx';
 import {
   Badge,
   Button,
@@ -37,6 +37,7 @@ import {
   Skeleton,
   Textarea,
 } from '../../ui/index.ts';
+import { ControlsDemo, OverlaysDemo } from './ComponentDemos.tsx';
 import { LeadsTableDemo } from './LeadsTableDemo.tsx';
 
 const SECTIONS = [
@@ -47,7 +48,9 @@ const SECTIONS = [
   ['inputs', 'Inputs'],
   ['selection', 'Checkbox & badges'],
   ['cards', 'Cards'],
+  ['controls', 'Select, switch & tabs'],
   ['menus', 'Menus'],
+  ['overlays', 'Dialogs & toasts'],
   ['states', 'Empty & loading'],
   ['table', 'Data table'],
 ] as const;
@@ -86,9 +89,15 @@ function Specimen({ label, children }: { label: string; children: ReactNode }) {
 }
 
 const COLOUR_GROUPS: { title: string; tokens: string[] }[] = [
-  { title: 'Surfaces', tokens: ['canvas', 'surface', 'surface-raised', 'surface-2', 'surface-3'] },
+  {
+    title: 'Surfaces',
+    tokens: ['canvas', 'surface', 'surface-raised', 'surface-2', 'surface-3', 'sidebar'],
+  },
   { title: 'Text & lines', tokens: ['fg', 'fg-muted', 'fg-subtle', 'line', 'line-strong'] },
-  { title: 'Accent', tokens: ['accent', 'accent-hover', 'accent-subtle', 'accent-text', 'sun'] },
+  {
+    title: 'Accent',
+    tokens: ['accent', 'accent-hover', 'accent-subtle', 'accent-text', 'highlight', 'sun'],
+  },
   {
     title: 'Status',
     tokens: [
@@ -132,12 +141,11 @@ export function DesignPage() {
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <BrandMark />
-            <span className="font-semibold tracking-tight">MMS CRM</span>
+            <BrandMark variant="full" />
             <span className="text-fg-subtle">/</span>
             <span className="text-fg-muted">Design system</span>
           </div>
-          <ThemeToggle />
+          <ThemeMenu />
         </div>
         <nav
           aria-label="Sections"
@@ -157,12 +165,12 @@ export function DesignPage() {
 
       <main className="mx-auto flex max-w-6xl flex-col gap-14 px-4 py-10 sm:px-6">
         <div className="max-w-2xl">
-          <Badge tone="accent">Graphite · v1</Badge>
+          <Badge tone="accent">Graphite · Make My Solar</Badge>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">Design system</h1>
           <p className="mt-2 text-base text-fg-muted">
-            Quiet neutral surfaces, one accent colour, hairline borders and dense 13–14px type.
-            Every screen in the CRM is built from these tokens and components. Use the toggle in the
-            top right to check light and dark mode.
+            Two themes share every component: Graphite (quiet neutrals, indigo accent) and Make My
+            Solar (white and navy, orange highlights, the real logos), each in light and dark. Use
+            the palette menu in the top right to switch.
           </p>
         </div>
 
@@ -480,6 +488,14 @@ export function DesignPage() {
         </Section>
 
         <Section
+          id="controls"
+          title="Select, switch & tabs"
+          description="Select for one choice from a short list; switch for settings that apply immediately; tabs to split a record into sections."
+        >
+          <ControlsDemo />
+        </Section>
+
+        <Section
           id="menus"
           title="Menus"
           description="Keyboard: arrows to move, Enter to choose, Esc to close."
@@ -512,6 +528,14 @@ export function DesignPage() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </Section>
+
+        <Section
+          id="overlays"
+          title="Dialogs & toasts"
+          description="Dialogs for decisions, drawers for side panels and mobile navigation, tooltips for short hints, toasts for brief confirmations."
+        >
+          <OverlaysDemo />
         </Section>
 
         <Section id="states" title="Empty & loading">
