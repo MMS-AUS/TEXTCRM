@@ -22,6 +22,8 @@
     "user:create": "node --env-file-if-exists=../../.env src/cli/create-user.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1161.0",
+    "@aws-sdk/s3-request-presigner": "^3.1161.0",
     "@mms/shared": "*",
     "@trpc/server": "^11.22.1",
     "cors": "^2.8.6",

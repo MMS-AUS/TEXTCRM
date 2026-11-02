@@ -22,5 +22,28 @@ services:
       timeout: 5s
       retries: 10
 
+  # Local S3-compatible file storage, standing in for Cloudflare R2 during development.
+  # RustFS (Apache-2.0) is used because MinIO no longer publishes container images.
+  storage:
+    image: rustfs/rustfs:1.0.4
+    restart: unless-stopped
+    environment:
+      # Development-only credentials; they match S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY in .env.
+      RUSTFS_ACCESS_KEY: crm-dev
+      RUSTFS_SECRET_KEY: crm-dev-secret
+      RUSTFS_OBS_LOG_DIRECTORY: ''
+    ports:
+      # Bound to localhost only. 9000 = S3 API (the browser uploads here), 9001 = web console.
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
+    volumes:
+      - storagedata:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'nc -z localhost 9000']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
 volumes:
   pgdata:
+  storagedata:

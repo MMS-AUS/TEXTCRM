@@ -1,21 +1,9 @@
-import { TRPCError } from '@trpc/server';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { ActivityEntityType } from '@mms/shared';
 import type { Db, Tx } from '../../db/client.ts';
-import { activities, contacts, leads, projects, tickets } from '../../db/schema/index.ts';
+import { activities } from '../../db/schema/index.ts';
 
-/** Rejects activity on a record that doesn't exist (the table has no FK — it's polymorphic). */
-export async function assertEntityExists(
-  db: Db | Tx,
-  entityType: ActivityEntityType,
-  entityId: string,
-): Promise<void> {
-  const table = { lead: leads, contact: contacts, project: projects, ticket: tickets }[entityType];
-  const [row] = await db.select({ id: table.id }).from(table).where(eq(table.id, entityId));
-  if (!row) {
-    throw new TRPCError({ code: 'NOT_FOUND', message: `This ${entityType} does not exist.` });
-  }
-}
+export { assertEntityExists } from '../entities.ts';
 
 /**
  * A timeline entry written by the CRM itself, e.g. "Status: New → Contacted". Runs in the

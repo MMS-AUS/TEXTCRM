@@ -43,7 +43,8 @@ export const optionalPhone = z
     return e164;
   });
 
-const optionalId = z
+/** An optional record id; '' (an empty picker) counts as none. */
+export const optionalId = z
   .uuid()
   .nullish()
   .or(z.literal(''))

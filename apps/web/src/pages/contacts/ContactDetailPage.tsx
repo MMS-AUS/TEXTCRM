@@ -10,6 +10,7 @@ import {
   LifeBuoy,
   MapPin,
   MoreHorizontal,
+  Paperclip,
   Pencil,
   Plus,
   Star,
@@ -22,6 +23,7 @@ import { useState, type ReactNode } from 'react';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
+import { FilesPanel } from '../../components/FilesPanel.tsx';
 import { HistoryList } from '../../components/HistoryList.tsx';
 import { errorMessage } from '../../lib/errors.ts';
 import { formatDate, fullName } from '../../lib/format.ts';
@@ -476,6 +478,10 @@ function ContactView({ contact }: { contact: Contact }) {
                     <span className="text-xs text-fg-subtle tabular-nums">{tab.count}</span>
                   </TabsTrigger>
                 ))}
+                <TabsTrigger value="files">
+                  <Paperclip />
+                  Files
+                </TabsTrigger>
                 <TabsTrigger value="history">
                   <History />
                   History
@@ -488,6 +494,9 @@ function ContactView({ contact }: { contact: Contact }) {
               ))}
               <TabsContent value="activity">
                 <ActivityTimeline entityType="contact" entityId={contact.id} readOnly={archived} />
+              </TabsContent>
+              <TabsContent value="files">
+                <FilesPanel entityType="contact" entityId={contact.id} readOnly={archived} />
               </TabsContent>
               <TabsContent value="history">
                 <HistoryList entries={contact.history} labels={CONTACT_FIELD_LABELS} />

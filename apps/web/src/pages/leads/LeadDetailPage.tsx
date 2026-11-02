@@ -7,6 +7,7 @@ import {
   Check,
   History,
   MapPin,
+  Paperclip,
   Pencil,
   StickyNote,
   Trash2,
@@ -17,6 +18,7 @@ import { useState } from 'react';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
+import { FilesPanel } from '../../components/FilesPanel.tsx';
 import { HistoryList } from '../../components/HistoryList.tsx';
 import { errorMessage } from '../../lib/errors.ts';
 import { formatDate, fullName } from '../../lib/format.ts';
@@ -42,6 +44,7 @@ import {
   toast,
 } from '../../ui/index.ts';
 import { LeadFormDrawer } from './LeadFormDrawer.tsx';
+import { PricingCard, SystemCard } from './LeadQuoteCards.tsx';
 import { statusTone } from './lead-status.ts';
 
 type Lead = RouterOutputs['leads']['get'];
@@ -406,33 +409,46 @@ function LeadView({ lead }: { lead: Lead }) {
           )}
         </div>
 
-        <Card className="lg:col-span-2">
-          <CardContent>
-            <Tabs defaultValue="activity">
-              <TabsList>
-                <TabsTrigger value="activity">
-                  <StickyNote />
-                  Activity
-                  {lead.openTasks > 0 && (
-                    <Badge tone="accent" className="ml-1">
-                      {lead.openTasks} open
-                    </Badge>
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="history">
-                  <History />
-                  History
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="activity">
-                <ActivityTimeline entityType="lead" entityId={lead.id} readOnly={deleted} />
-              </TabsContent>
-              <TabsContent value="history">
-                <HistoryList entries={lead.history} labels={LEAD_FIELD_LABELS} />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-6 lg:col-span-2">
+          <div className="grid items-start gap-6 xl:grid-cols-2">
+            <SystemCard lead={lead} editable={editable} />
+            <PricingCard lead={lead} editable={editable} />
+          </div>
+          <Card>
+            <CardContent>
+              <Tabs defaultValue="activity">
+                <TabsList>
+                  <TabsTrigger value="activity">
+                    <StickyNote />
+                    Activity
+                    {lead.openTasks > 0 && (
+                      <Badge tone="accent" className="ml-1">
+                        {lead.openTasks} open
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="files">
+                    <Paperclip />
+                    Files
+                  </TabsTrigger>
+                  <TabsTrigger value="history">
+                    <History />
+                    History
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="activity">
+                  <ActivityTimeline entityType="lead" entityId={lead.id} readOnly={deleted} />
+                </TabsContent>
+                <TabsContent value="files">
+                  <FilesPanel entityType="lead" entityId={lead.id} readOnly={deleted} />
+                </TabsContent>
+                <TabsContent value="history">
+                  <HistoryList entries={lead.history} labels={LEAD_FIELD_LABELS} />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <LeadFormDrawer open={editing} onOpenChange={setEditing} lead={lead} />

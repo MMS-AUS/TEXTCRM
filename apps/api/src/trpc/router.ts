@@ -2,6 +2,8 @@ import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { activitiesRouter } from '../modules/activities/router.ts';
 import { companiesRouter } from '../modules/companies/router.ts';
 import { contactsRouter } from '../modules/contacts/router.ts';
+import { filesRouter } from '../modules/files/router.ts';
+import { hardwareRouter } from '../modules/hardware/router.ts';
 import { leadsRouter } from '../modules/leads/router.ts';
 import { savedViewsRouter } from '../modules/saved-views/router.ts';
 import { usersRouter } from '../modules/users/router.ts';
@@ -20,6 +22,8 @@ export const appRouter = router({
   leads: leadsRouter,
   activities: activitiesRouter,
   savedViews: savedViewsRouter,
+  hardware: hardwareRouter,
+  files: filesRouter,
 });
 
 /** Imported (type-only) by apps/web for end-to-end type safety. */

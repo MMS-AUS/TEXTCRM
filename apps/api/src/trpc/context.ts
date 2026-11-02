@@ -8,18 +8,22 @@ import { findUserForAuth, type RequestMeta } from '../auth/users-repo.ts';
 import type { Config } from '../config.ts';
 import type { Db } from '../db/client.ts';
 import type { Logger } from '../logger.ts';
+import type { Storage } from '../storage/storage.ts';
 
 export interface Context {
   db: Db;
   log: Logger;
   auth: AuthState;
   meta: RequestMeta;
+  /** Null when file storage isn't configured. */
+  storage: Storage | null;
 }
 
 export interface ContextDeps {
   config: Pick<Config, 'ALLOWED_EMAIL_DOMAIN'>;
   db: Db;
   verifyIdToken: VerifyIdToken;
+  storage: Storage | null;
 }
 
 export function createContextFactory(deps: ContextDeps) {
@@ -31,6 +35,7 @@ export function createContextFactory(deps: ContextDeps) {
 
   return async ({ req }: CreateExpressContextOptions): Promise<Context> => ({
     db: deps.db,
+    storage: deps.storage,
     log: req.log,
     auth: await authenticate(req.headers.authorization, authDeps),
     meta: {

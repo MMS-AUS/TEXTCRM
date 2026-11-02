@@ -40,6 +40,7 @@ import type { Db, Tx } from '../../db/client.ts';
 import { activities, contacts, leads, users } from '../../db/schema/index.ts';
 import { permissionProcedure, router } from '../../trpc/trpc.ts';
 import { openTasksWhere, logSystemActivity } from '../activities/service.ts';
+import { leadDetailProcedures, loadLeadDetails } from './details.ts';
 import { diff, entityHistory, recordAudit, type Actor } from '../audit.ts';
 import { assertOption } from '../options.ts';
 import { containsPattern, phoneContains } from '../search.ts';
@@ -368,6 +369,7 @@ async function bulk(
 }
 
 export const leadsRouter = router({
+  ...leadDetailProcedures,
   list: permissionProcedure('leads', 'view')
     .input(leadListInputSchema)
     .query(async ({ ctx, input }) => {
@@ -443,7 +445,7 @@ export const leadsRouter = router({
       if (!row) throw notFound();
       const { lead } = row;
 
-      const [otherLeads, [openTasks], history] = await Promise.all([
+      const [otherLeads, [openTasks], history, details] = await Promise.all([
         lead.contactId
           ? ctx.db
               .select({
@@ -465,6 +467,7 @@ export const leadsRouter = router({
           : [],
         ctx.db.select({ total: count() }).from(activities).where(openTasksWhere('lead', lead.id)),
         entityHistory(ctx.db, 'lead', lead.id),
+        loadLeadDetails(ctx.db, lead.id),
       ]);
 
       return {
@@ -482,6 +485,7 @@ export const leadsRouter = router({
         otherLeads,
         openTasks: openTasks?.total ?? 0,
         history,
+        ...details,
       };
     }),
 

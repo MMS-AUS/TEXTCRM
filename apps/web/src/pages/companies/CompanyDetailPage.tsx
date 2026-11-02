@@ -8,6 +8,7 @@ import {
   Building2,
   ExternalLink,
   History,
+  Paperclip,
   Pencil,
   Plus,
   UsersRound,
@@ -15,6 +16,7 @@ import {
 import { useState } from 'react';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
+import { FilesPanel } from '../../components/FilesPanel.tsx';
 import { HistoryList } from '../../components/HistoryList.tsx';
 import { errorMessage } from '../../lib/errors.ts';
 import { formatDate, fullName } from '../../lib/format.ts';
@@ -259,6 +261,10 @@ function CompanyView({ company }: { company: Company }) {
                     {company.contacts.length}
                   </span>
                 </TabsTrigger>
+                <TabsTrigger value="files">
+                  <Paperclip />
+                  Files
+                </TabsTrigger>
                 <TabsTrigger value="history">
                   <History />
                   History
@@ -302,6 +308,9 @@ function CompanyView({ company }: { company: Company }) {
                     ))}
                   </ul>
                 )}
+              </TabsContent>
+              <TabsContent value="files">
+                <FilesPanel entityType="company" entityId={company.id} readOnly={archived} />
               </TabsContent>
               <TabsContent value="history">
                 <HistoryList entries={company.history} labels={COMPANY_FIELD_LABELS} />

@@ -15,6 +15,7 @@ describe('HTTP app', () => {
       db: unconnectedDb,
       logger: silentLogger,
       verifyIdToken: () => Promise.reject(new Error('invalid token')),
+      storage: null,
     });
     server = app.listen(0);
     await new Promise<void>((resolve) => server.once('listening', resolve));

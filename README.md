@@ -75,6 +75,15 @@ renders inside the protected layout and app shell (`apps/web/src/app/`).
 | `npm run db:reset`                                                       | **Dev only:** wipe the local database and re-apply migrations        |
 | `npm run user:create -w @mms/api -- --email … --name "…" [--role admin]` | Add or re-activate an allowlisted user                               |
 
+## File storage
+
+Files (bills, photos, contracts) live in S3-compatible object storage: Cloudflare R2 in
+production, and in development a local storage container (RustFS) that `npm run db:up` starts
+next to Postgres — S3 API on `127.0.0.1:9000`, web console on `127.0.0.1:9001` (login
+`crm-dev` / `crm-dev-secret`). The `S3_*` values in `.env.example` work as-is locally; the API
+creates the bucket and its browser-upload (CORS) rule on start. Browsers upload and download
+directly with short-lived presigned URLs that the API only issues after a permission check.
+
 ## Database
 
 - Local Postgres 18 in Docker, bound to `127.0.0.1:5432`, user/password/db `crm`/`crm`/`crm`.
