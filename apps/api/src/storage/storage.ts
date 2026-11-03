@@ -32,6 +32,8 @@ export interface Storage {
   /** Size and type of a stored object, or null if it isn't there. */
   head(key: string): Promise<{ sizeBytes: number; contentType: string | null } | null>;
   remove(keys: string[]): Promise<void>;
+  /** The whole object, for server-side processing (imports). Refuses objects over maxBytes. */
+  read(key: string, maxBytes: number): Promise<Buffer>;
 }
 
 export type StorageConfig = Pick<
@@ -113,6 +115,15 @@ export function createStorage(config: StorageConfig): Storage | null {
         }
         throw error;
       }
+    },
+
+    async read(key, maxBytes) {
+      const result = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+      if ((result.ContentLength ?? 0) > maxBytes) {
+        throw new Error(`Stored file is larger than ${String(maxBytes)} bytes`);
+      }
+      if (!result.Body) throw new Error('Stored file has no content');
+      return Buffer.from(await result.Body.transformToByteArray());
     },
 
     async remove(keys) {

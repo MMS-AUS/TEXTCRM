@@ -10,7 +10,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors blue,magenta \"npm run dev -w @mms/api\" \"npm run dev -w @mms/web\"",
+    "dev": "concurrently --kill-others-on-fail --names api,worker,web --prefix-colors blue,yellow,magenta \"npm run dev -w @mms/api\" \"npm run dev:worker -w @mms/api\" \"npm run dev -w @mms/web\"",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:integration": "npm run test:integration -w @mms/api",

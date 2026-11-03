@@ -49,6 +49,7 @@ export { Popover, PopoverClose, PopoverContent, PopoverTrigger } from './Popover
 export { Select, type SelectOption } from './Select.tsx';
 export { Spinner } from './Spinner.tsx';
 export { Switch } from './Switch.tsx';
+export { Table, TableCell, TableHead, TableHeaderCell, TableRow } from './Table.tsx';
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs.tsx';
 export { dismissToast, toast, type ToastTone } from './toast-store.ts';
 export { Toaster } from './Toaster.tsx';

@@ -11,6 +11,7 @@ import type { VerifyIdToken } from './auth/types.ts';
 import type { Config } from './config.ts';
 import type { Db } from './db/client.ts';
 import type { Logger } from './logger.ts';
+import type { JobQueue } from './jobs/queue.ts';
 import type { Storage } from './storage/storage.ts';
 import { createContextFactory } from './trpc/context.ts';
 import { appRouter } from './trpc/router.ts';
@@ -22,6 +23,7 @@ export interface AppDeps {
   verifyIdToken: VerifyIdToken;
   /** Null when file storage isn't configured. */
   storage: Storage | null;
+  jobs: JobQueue | null;
 }
 
 const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;

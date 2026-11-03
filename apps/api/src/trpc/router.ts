@@ -4,6 +4,7 @@ import { companiesRouter } from '../modules/companies/router.ts';
 import { contactsRouter } from '../modules/contacts/router.ts';
 import { filesRouter } from '../modules/files/router.ts';
 import { hardwareRouter } from '../modules/hardware/router.ts';
+import { jobsRouter } from '../modules/jobs/router.ts';
 import { leadsRouter } from '../modules/leads/router.ts';
 import { projectsRouter } from '../modules/projects/router.ts';
 import { savedViewsRouter } from '../modules/saved-views/router.ts';
@@ -26,6 +27,7 @@ export const appRouter = router({
   savedViews: savedViewsRouter,
   hardware: hardwareRouter,
   files: filesRouter,
+  jobs: jobsRouter,
 });
 
 /** Imported (type-only) by apps/web for end-to-end type safety. */

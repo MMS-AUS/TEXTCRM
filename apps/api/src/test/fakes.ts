@@ -43,6 +43,7 @@ export function fakeContext(auth: AuthState, overrides: Partial<Context> = {}): 
   return {
     db: unconnectedDb,
     storage: null,
+    jobs: null,
     log: silentLogger,
     auth,
     meta: { requestId: 'test-request', ipAddress: '127.0.0.1', userAgent: 'vitest' },

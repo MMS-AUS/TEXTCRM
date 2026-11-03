@@ -25,6 +25,15 @@ const configSchema = z.object({
   S3_BUCKET: optionalString,
   S3_ACCESS_KEY_ID: optionalString,
   S3_SECRET_ACCESS_KEY: optionalString,
+  /**
+   * Google Sheets (Steps 3.2/3.3): path to the service-account JSON key, kept outside the repo.
+   * Optional: without it, uploads still import and the Google options explain what's missing.
+   */
+  GOOGLE_SERVICE_ACCOUNT_PATH: optionalString,
+  SHEETS_SYNC_INTERVAL_MINUTES: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.coerce.number().int().min(1).max(60).default(5),
+  ),
   /** true for local S3 servers (bucket in the path); false for R2. */
   S3_FORCE_PATH_STYLE: z
     .enum(['true', 'false', ''])

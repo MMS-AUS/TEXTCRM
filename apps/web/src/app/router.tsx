@@ -25,6 +25,8 @@ import {
 import { FeatureGate, PlaceholderPage } from '../pages/PlaceholderPage.tsx';
 import { ProjectDetailPage } from '../pages/projects/ProjectDetailPage.tsx';
 import { ProjectsPage } from '../pages/projects/ProjectsPage.tsx';
+import { JobsPage } from '../pages/settings/JobsPage.tsx';
+import { SettingsPage } from '../pages/settings/SettingsPage.tsx';
 import { Toaster } from '../ui/index.ts';
 import { SETTINGS_FEATURES } from './nav.ts';
 import { ProtectedLayout, type AppServices } from './ProtectedLayout.tsx';
@@ -176,12 +178,19 @@ const settingsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/settings',
   component: () => (
-    <PlaceholderPage
-      title="Settings"
-      description="Users, roles, option lists, hardware catalogue and integrations."
-      step="Step 2.10"
-      features={SETTINGS_FEATURES}
-    />
+    <FeatureGate title="Settings" features={[...SETTINGS_FEATURES, 'leads', 'contacts']}>
+      <SettingsPage />
+    </FeatureGate>
+  ),
+});
+
+const jobsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/jobs',
+  component: () => (
+    <FeatureGate title="Background jobs" features={['integrations']}>
+      <JobsPage />
+    </FeatureGate>
   ),
 });
 
@@ -200,6 +209,7 @@ export const routeTree = rootRoute.addChildren([
     projectDetailRoute,
     ticketsRoute,
     settingsRoute,
+    jobsRoute,
   ]),
 ]);
 

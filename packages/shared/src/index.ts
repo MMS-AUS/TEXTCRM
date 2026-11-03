@@ -8,3 +8,4 @@ export * from './lead-details.ts';
 export * from './files.ts';
 export * from './projects.ts';
 export * from './project-sections.ts';
+export * from './jobs.ts';

@@ -8,6 +8,7 @@ import { findUserForAuth, type RequestMeta } from '../auth/users-repo.ts';
 import type { Config } from '../config.ts';
 import type { Db } from '../db/client.ts';
 import type { Logger } from '../logger.ts';
+import type { JobQueue } from '../jobs/queue.ts';
 import type { Storage } from '../storage/storage.ts';
 
 export interface Context {
@@ -17,6 +18,8 @@ export interface Context {
   meta: RequestMeta;
   /** Null when file storage isn't configured. */
   storage: Storage | null;
+  /** Null when the job queue couldn't start (jobs are then refused with a clear message). */
+  jobs: JobQueue | null;
 }
 
 export interface ContextDeps {
@@ -24,6 +27,7 @@ export interface ContextDeps {
   db: Db;
   verifyIdToken: VerifyIdToken;
   storage: Storage | null;
+  jobs: JobQueue | null;
 }
 
 export function createContextFactory(deps: ContextDeps) {
@@ -36,6 +40,7 @@ export function createContextFactory(deps: ContextDeps) {
   return async ({ req }: CreateExpressContextOptions): Promise<Context> => ({
     db: deps.db,
     storage: deps.storage,
+    jobs: deps.jobs,
     log: req.log,
     auth: await authenticate(req.headers.authorization, authDeps),
     meta: {
