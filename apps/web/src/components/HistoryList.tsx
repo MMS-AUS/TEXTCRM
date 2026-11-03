@@ -1,6 +1,6 @@
 import { formatPhone } from '@mms/shared';
 import { History } from 'lucide-react';
-import { formatDateTime, formatRelative } from '../lib/format.ts';
+import { formatDate, formatDateTime, formatRelative } from '../lib/format.ts';
 import { Avatar, EmptyState, Tooltip } from '../ui/index.ts';
 
 export type HistoryEntry = {
@@ -20,12 +20,16 @@ const ACTIONS: Record<string, string> = {
   address_add: 'added an address',
   address_update: 'updated an address',
   address_remove: 'removed an address',
+  update_site: 'updated the site',
+  update_system: 'updated the system',
+  update_pricing: 'updated the pricing',
 };
 
 function show(field: string, value: unknown): string {
   if (value === null || value === undefined || value === '') return 'empty';
   if (typeof value === 'string' && /mobile|phone/i.test(field)) return formatPhone(value);
   if (typeof value === 'boolean') return value ? 'yes' : 'no';
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}(T|$)/.test(value)) return formatDate(value);
   if (typeof value === 'string' || typeof value === 'number') return String(value);
   return JSON.stringify(value);
 }
@@ -37,10 +41,13 @@ const OPAQUE = /Id$/;
 export function HistoryList({
   entries,
   labels,
+  actions,
 }: {
   entries: HistoryEntry[];
-  /** Field name → label, e.g. { firstName: 'First name' }. */
+  /** Field name → label, e.g. { firstName: 'First name' }; an 'action.field' key wins. */
   labels: Record<string, string>;
+  /** Extra action → phrase, e.g. { update_grid: 'updated the grid application' }. */
+  actions?: Record<string, string>;
 }) {
   if (entries.length === 0) {
     return <EmptyState icon={<History />} title="No history yet" />;
@@ -52,7 +59,9 @@ export function HistoryList({
         const after = entry.changes.after ?? {};
         const before = entry.changes.before ?? {};
         const fields =
-          entry.action === 'update' || entry.action === 'address_update' ? Object.keys(after) : [];
+          entry.action.startsWith('update') || entry.action === 'address_update'
+            ? Object.keys(after)
+            : [];
         const detail =
           typeof after.address === 'string'
             ? after.address
@@ -65,7 +74,9 @@ export function HistoryList({
             <div className="min-w-0 flex-1 text-sm">
               <p>
                 <span className="font-medium">{actor}</span>{' '}
-                <span className="text-fg-muted">{ACTIONS[entry.action] ?? entry.action}</span>
+                <span className="text-fg-muted">
+                  {actions?.[entry.action] ?? ACTIONS[entry.action] ?? entry.action}
+                </span>
                 {detail && <span className="text-fg-muted">: {detail}</span>}
                 <span className="text-fg-subtle"> · </span>
                 <Tooltip content={formatDateTime(entry.occurredAt)}>
@@ -78,7 +89,9 @@ export function HistoryList({
                 <ul className="mt-1.5 flex flex-col gap-1">
                   {fields.map((field) => (
                     <li key={field} className="text-fg-muted">
-                      <span className="text-fg">{labels[field] ?? field}</span>
+                      <span className="text-fg">
+                        {labels[`${entry.action}.${field}`] ?? labels[field] ?? field}
+                      </span>
                       {OPAQUE.test(field) ? (
                         ' changed'
                       ) : (

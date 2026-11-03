@@ -12,6 +12,17 @@ export function projectStatusTone(status: string): BadgeTone {
   return STATUS_TONES[status] ?? 'neutral';
 }
 
+const DONE = /approved|paid|complete|delivered|verified|settled|reconciled|traded|installed/i;
+const PROBLEM = /reject|declin|disput|flag|rectif|cancel|hold/i;
+
+/** Badge colour for a section's status (grid, finance, stock, installation, STC). */
+export function sectionStatusTone(status: string | null | undefined): BadgeTone {
+  if (!status) return 'neutral';
+  if (PROBLEM.test(status)) return 'danger';
+  if (DONE.test(status)) return 'success';
+  return 'info';
+}
+
 /** Position in the pipeline, 1-based ("Stage 4 of 9"); 0 if the stage isn't recognised. */
 export function stageNumber(stage: string): number {
   return PROJECT_STAGES.findIndex((s) => s === stage) + 1;

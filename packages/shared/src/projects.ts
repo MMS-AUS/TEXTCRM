@@ -23,24 +23,28 @@ export const PROJECT_FINAL_STAGE: ProjectStage = 'Completed';
 export const PROJECT_STATUSES = ['Active', 'Completed', 'Closed', 'Lost'] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
-const optionalDate = z.iso
+export const optionalDate = z.iso
   .date()
   .nullish()
   .or(z.literal(''))
   .transform((value) => value || null);
 
-const countField = z
-  .union([z.string(), z.number()])
-  .nullish()
-  .transform((value, ctx) => {
-    if (value === null || value === undefined || value === '') return null;
-    const number = Number(value);
-    if (!Number.isInteger(number) || number < 0 || number > 2000) {
-      ctx.addIssue({ code: 'custom', message: 'Enter a whole number.' });
-      return z.NEVER;
-    }
-    return number;
-  });
+/** Empty → null; otherwise a whole number from 0 to `max`. */
+export const wholeNumberField = (max: number) =>
+  z
+    .union([z.string(), z.number()])
+    .nullish()
+    .transform((value, ctx) => {
+      if (value === null || value === undefined || value === '') return null;
+      const number = Number(value);
+      if (!Number.isInteger(number) || number < 0 || number > max) {
+        ctx.addIssue({ code: 'custom', message: 'Enter a whole number.' });
+        return z.NEVER;
+      }
+      return number;
+    });
+
+const countField = wholeNumberField(2000);
 
 // ── Sections ──────────────────────────────────────────────────────────────
 

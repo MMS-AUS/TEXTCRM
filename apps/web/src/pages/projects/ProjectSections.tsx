@@ -14,9 +14,8 @@ import {
   type ProjectSystemInput,
   type ProjectSystemValues,
 } from '@mms/shared';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useForm, useWatch, type Control, type FieldPath } from 'react-hook-form';
 import { DetailList } from '../../components/DetailList.tsx';
 import {
@@ -24,98 +23,27 @@ import {
   type HardwareKind,
   type HardwareOption,
 } from '../../components/HardwarePicker.tsx';
-import { errorMessage } from '../../lib/errors.ts';
 import { formatDate } from '../../lib/format.ts';
 import { useOptions } from '../../lib/hooks.ts';
 import { useTRPC, type RouterOutputs } from '../../lib/trpc.ts';
 import {
   Alert,
   Badge,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   DateInput,
   Dialog,
   DialogBody,
   DialogContent,
-  DialogFooter,
   FormField,
   Input,
   Select,
   Textarea,
   textInput,
-  toast,
 } from '../../ui/index.ts';
+import { FormFooter, SectionCard } from './SectionForm.tsx';
+import { useProjectSave } from './use-project-save.ts';
 
 type Project = RouterOutputs['projects']['get'];
 const NONE = '__none';
-
-function SectionCard({
-  title,
-  editable,
-  onEdit,
-  children,
-}: {
-  title: string;
-  editable: boolean;
-  onEdit: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <Card>
-      <CardHeader
-        actions={
-          editable && (
-            <Button size="sm" variant="ghost" onClick={onEdit}>
-              <Pencil />
-              Edit
-            </Button>
-          )
-        }
-      >
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="py-1">{children}</CardContent>
-    </Card>
-  );
-}
-
-/** Save → refresh the project and its timeline → toast, or show the API's error in the dialog. */
-function useSave(message: string, onDone: () => void) {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const [error, setError] = useState<string | null>(null);
-  const run = async (action: () => Promise<unknown>) => {
-    setError(null);
-    try {
-      await action();
-      await Promise.all([
-        queryClient.invalidateQueries(trpc.projects.pathFilter()),
-        queryClient.invalidateQueries(trpc.activities.pathFilter()),
-      ]);
-      toast({ title: message, tone: 'success' });
-      onDone();
-    } catch (caught) {
-      setError(errorMessage(caught));
-    }
-  };
-  return { error, run };
-}
-
-function FormFooter({ onCancel, saving }: { onCancel: () => void; saving: boolean }) {
-  return (
-    <DialogFooter>
-      <Button variant="ghost" onClick={onCancel}>
-        Cancel
-      </Button>
-      <Button type="submit" variant="primary" loading={saving}>
-        Save
-      </Button>
-    </DialogFooter>
-  );
-}
 
 // ── Customer & site ───────────────────────────────────────────────────────
 
@@ -153,7 +81,7 @@ function SiteForm({ project, onDone }: { project: Project; onDone: () => void })
   const trpc = useTRPC();
   const update = useMutation(trpc.projects.updateSite.mutationOptions());
   const options = useOptions(['roofTypes', 'houseStoreys', 'phases']);
-  const save = useSave('Site saved', onDone);
+  const save = useProjectSave('Site saved', onDone);
   const form = useForm<ProjectSiteInput, unknown, ProjectSiteValues>({
     resolver: zodResolver(projectSiteSchema),
     defaultValues: {
@@ -376,7 +304,7 @@ export function SiteCard({ project, editable }: { project: Project; editable: bo
 function SystemForm({ project, onDone }: { project: Project; onDone: () => void }) {
   const trpc = useTRPC();
   const update = useMutation(trpc.projects.updateSystem.mutationOptions());
-  const save = useSave('System design saved', onDone);
+  const save = useProjectSave('System design saved', onDone);
   const system = project.system;
   const [panelWatts, setPanelWatts] = useState(system?.panel?.spec.replace(' W', '') ?? null);
   const form = useForm<ProjectSystemInput, unknown, ProjectSystemValues>({
@@ -519,7 +447,7 @@ export function SystemDesignCard({ project, editable }: { project: Project; edit
 function PricingForm({ project, onDone }: { project: Project; onDone: () => void }) {
   const trpc = useTRPC();
   const update = useMutation(trpc.projects.updatePricing.mutationOptions());
-  const save = useSave('Pricing saved', onDone);
+  const save = useProjectSave('Pricing saved', onDone);
   const pricing = project.pricing;
   const form = useForm<ProjectPricingInput, unknown, ProjectPricingValues>({
     resolver: zodResolver(projectPricingSchema),

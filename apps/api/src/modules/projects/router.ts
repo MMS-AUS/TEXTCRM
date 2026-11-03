@@ -52,7 +52,9 @@ import { diff, entityHistory, recordAudit, type Actor } from '../audit.ts';
 import { assertHardware, hardwareOption } from '../hardware/router.ts';
 import { assertOption } from '../options.ts';
 import { containsPattern, phoneContains } from '../search.ts';
+import { actorOf, editableProject, notFound } from './common.ts';
 import { convertLead, previewConversion } from './conversion.ts';
+import { loadSections, sectionProcedures } from './sections.ts';
 
 type Filters = z.output<typeof projectFiltersSchema>;
 type ListInput = z.output<typeof projectListInputSchema>;
@@ -63,9 +65,6 @@ const stageOrder = sql`array_position(array[${sql.join(
   PROJECT_STAGES.map((stage) => sql`${stage}`),
   sql`, `,
 )}]::text[], ${projects.stage})`;
-
-const notFound = () =>
-  new TRPCError({ code: 'NOT_FOUND', message: 'This project does not exist.' });
 
 function sortBy(column: AnyPgColumn | SQL, descending: boolean): SQL {
   return descending ? sql`${column} desc nulls last` : sql`${column} asc nulls last`;
@@ -162,17 +161,6 @@ function baseQuery(db: Db, where: SQL | undefined) {
 type Row = Awaited<ReturnType<typeof baseQuery>>[number];
 const serialise = (row: Row) => ({ ...row, updatedAt: row.updatedAt.toISOString() });
 
-const actorOf = (ctx: { user: { id: string }; meta: Actor['meta'] }): Actor => ({
-  userId: ctx.user.id,
-  meta: ctx.meta,
-});
-
-async function editableProject(tx: Db | Tx, id: string) {
-  const [project] = await tx.select().from(projects).where(eq(projects.id, id));
-  if (!project || project.deletedAt) throw notFound();
-  return project;
-}
-
 /**
  * Stage and status move together at the ends: reaching the final stage completes the job;
  * leaving it, or reopening, makes the job active again. Closed/Lost jobs don't move.
@@ -255,6 +243,8 @@ async function changeStageOrStatus(
 }
 
 export const projectsRouter = router({
+  ...sectionProcedures,
+
   list: permissionProcedure('projects', 'view')
     .input(projectListInputSchema)
     .query(async ({ ctx, input }) => {
@@ -311,13 +301,14 @@ export const projectsRouter = router({
         .where(eq(projects.id, input.id));
       if (!row) throw notFound();
       const { project } = row;
-      const [[system], [pricing], history] = await Promise.all([
+      const [[system], [pricing], history, sections] = await Promise.all([
         ctx.db
           .select()
           .from(projectSystemDesign)
           .where(eq(projectSystemDesign.projectId, project.id)),
         ctx.db.select().from(projectPricing).where(eq(projectPricing.projectId, project.id)),
         entityHistory(ctx.db, 'project', project.id),
+        loadSections(ctx.db, project),
       ]);
       const [panel, inverter, battery] = await Promise.all([
         hardwareOption(ctx.db, 'panel', system?.panelId),
@@ -361,6 +352,7 @@ export const projectsRouter = router({
               balancePayableAud: balancePayable(pricing),
             }
           : null,
+        ...sections,
         history,
       };
     }),

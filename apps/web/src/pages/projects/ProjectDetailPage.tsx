@@ -1,7 +1,16 @@
 import { formatPhone, PROJECT_STAGES, PROJECT_STATUSES } from '@mms/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
-import { ArrowLeft, FolderKanban, History, Mail, Paperclip, Phone, StickyNote } from 'lucide-react';
+import {
+  ArrowLeft,
+  ClipboardList,
+  FolderKanban,
+  History,
+  Mail,
+  Paperclip,
+  Phone,
+  StickyNote,
+} from 'lucide-react';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
 import { FilesPanel } from '../../components/FilesPanel.tsx';
 import { HistoryList } from '../../components/HistoryList.tsx';
@@ -25,6 +34,15 @@ import {
   toast,
 } from '../../ui/index.ts';
 import { PaymentsCard, SiteCard, SystemDesignCard } from './ProjectSections.tsx';
+import {
+  EbVerificationCard,
+  FinanceCard,
+  GridApplicationCard,
+  InstallationCard,
+  OpenSolarCard,
+  StcClaimCard,
+  WarehouseCard,
+} from './ProjectWorkflow.tsx';
 import { projectStatusTone, stageNumber } from './project-stage.ts';
 
 type Project = RouterOutputs['projects']['get'];
@@ -61,6 +79,85 @@ const PROJECT_FIELD_LABELS: Record<string, string> = {
   depositReceivedDate: 'Deposit received',
   balanceDueDate: 'Balance due',
   customerInvoiceNumber: 'Invoice number',
+  // EB verification
+  customerNameMatch: 'Bill name matches',
+  addressMatch: 'Bill address matches',
+  meterMatch: 'Meter matches',
+  meterPhase: 'Meter phase',
+  openSolarSystemMatch: 'OpenSolar system matches',
+  openSolarPricingMatch: 'OpenSolar pricing matches',
+  docsReceived: 'Bill documents',
+  'update_eb.docsReceivedDate': 'Bill documents received',
+  // Grid application
+  electricityDistributor: 'DNSP',
+  applicationRef: 'Grid application ref.',
+  'update_grid.status': 'Grid status',
+  'update_grid.appliedDate': 'Grid applied',
+  approvalDate: 'Grid approved',
+  rejectedDate: 'Grid rejected',
+  energyRetailer: 'Retailer',
+  retailerRef: 'Retailer ref.',
+  // Finance
+  financeOption: 'Finance',
+  financeCompany: 'Finance company',
+  'update_finance.status': 'Finance status',
+  'update_finance.appliedDate': 'Finance applied',
+  approvedDate: 'Finance approved',
+  approvedAmountAud: 'Finance approved amount',
+  // Warehouse
+  warehouse: 'Warehouse',
+  salesOrderNumber: 'Sales order',
+  stockStatus: 'Stock status',
+  stockUsedProject: 'Stock note',
+  invoiceNumber: 'Warehouse invoice no.',
+  invoiceDate: 'Warehouse invoice date',
+  invoiceAmountAud: 'Warehouse invoice amount',
+  invoiceStatus: 'Warehouse invoice status',
+  invoicePaidDate: 'Warehouse invoice paid',
+  // Installation
+  'update_installation.status': 'Installation status',
+  installerCompanyId: 'Installer',
+  installerQuotedAud: 'Installer quote',
+  bookingDate: 'Install date',
+  bookedByUserId: 'Booked by',
+  completedDate: 'Install completed',
+  docsStatus: 'Install documents',
+  'update_installation.docsReceivedDate': 'Install documents received',
+  installerInvoiceNumber: 'Installer invoice no.',
+  installerInvoiceDate: 'Installer invoice date',
+  installerInvoiceAmountAud: 'Installer invoice amount',
+  installerInvoiceStatus: 'Installer invoice status',
+  // STC claim
+  portal: 'STC portal',
+  jobNumber: 'STC job no.',
+  'update_stc.status': 'STC status',
+  submittedDate: 'STC submitted',
+  solarStcs: 'Solar STCs',
+  solarStcsAmountAud: 'Solar STC amount',
+  solarStcsReceivedDate: 'Solar STCs received',
+  batteryStcs: 'Battery STCs',
+  batteryStcsAmountAud: 'Battery STC amount',
+  batteryStcsReceivedDate: 'Battery STCs received',
+  adminChargesAud: 'STC admin charges',
+  customerStcRateAud: 'Customer STC rate',
+  internalStcRateAud: 'Internal STC rate',
+  // OpenSolar
+  openSolarProjectId: 'OpenSolar project',
+  proposalId: 'OpenSolar proposal',
+  signedUrl: 'Signed proposal link',
+  contractSigned: 'Contract signed',
+  contractSignedAt: 'Contract signed on',
+};
+
+const PROJECT_ACTIONS: Record<string, string> = {
+  update_system: 'updated the system design',
+  update_eb: 'updated the EB verification',
+  update_grid: 'updated the grid application',
+  update_finance: 'updated finance',
+  update_warehouse: 'updated warehouse & stock',
+  update_installation: 'updated the installation',
+  update_stc: 'updated the STC claim',
+  update_opensolar: 'updated OpenSolar',
 };
 
 const UNASSIGNED = '__none';
@@ -252,32 +349,48 @@ function ProjectView({ project }: { project: Project }) {
           <SiteCard project={project} editable={editable} />
           <SystemDesignCard project={project} editable={editable} />
           <PaymentsCard project={project} editable={editable} />
-          <Alert tone="info" title="More sections coming">
-            EB verification, grid application, finance, warehouse, installation, STC claim and
-            OpenSolar are added to this page in Step 2.7.
-          </Alert>
         </div>
-        <Card className="lg:col-span-2">
-          <CardContent>
-            <Tabs defaultValue="activity">
-              <TabsList>
-                <TabsTrigger value="activity">
-                  <StickyNote />
-                  Activity
-                </TabsTrigger>
-                <TabsTrigger value="files">
-                  <Paperclip />
-                  Files
-                </TabsTrigger>
-                <TabsTrigger value="history">
-                  <History />
-                  History
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="activity">
+        <Tabs defaultValue="job" className="lg:col-span-2">
+          <TabsList>
+            <TabsTrigger value="job">
+              <ClipboardList />
+              Job
+            </TabsTrigger>
+            <TabsTrigger value="activity">
+              <StickyNote />
+              Activity
+            </TabsTrigger>
+            <TabsTrigger value="files">
+              <Paperclip />
+              Files
+            </TabsTrigger>
+            <TabsTrigger value="history">
+              <History />
+              History
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="job">
+            {/* Workflow order, flowing down the first column then the second. */}
+            <div className="gap-6 xl:columns-2 [&>*]:mb-6 [&>*]:break-inside-avoid">
+              <EbVerificationCard project={project} editable={editable} />
+              <GridApplicationCard project={project} editable={editable} />
+              <FinanceCard project={project} editable={editable} />
+              <WarehouseCard project={project} editable={editable} />
+              <InstallationCard project={project} editable={editable} />
+              <StcClaimCard project={project} editable={editable} />
+              <OpenSolarCard project={project} editable={editable} />
+            </div>
+          </TabsContent>
+          <TabsContent value="activity">
+            <Card>
+              <CardContent>
                 <ActivityTimeline entityType="project" entityId={project.id} />
-              </TabsContent>
-              <TabsContent value="files" className="flex flex-col gap-6">
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="files">
+            <Card>
+              <CardContent className="flex flex-col gap-6">
                 <FilesPanel entityType="project" entityId={project.id} />
                 {project.leadId && project.canViewLead && (
                   <section aria-label="Files from the lead" className="flex flex-col gap-3">
@@ -285,13 +398,21 @@ function ProjectView({ project }: { project: Project }) {
                     <FilesPanel entityType="lead" entityId={project.leadId} readOnly />
                   </section>
                 )}
-              </TabsContent>
-              <TabsContent value="history">
-                <HistoryList entries={project.history} labels={PROJECT_FIELD_LABELS} />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="history">
+            <Card>
+              <CardContent>
+                <HistoryList
+                  entries={project.history}
+                  labels={PROJECT_FIELD_LABELS}
+                  actions={PROJECT_ACTIONS}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
