@@ -44,6 +44,7 @@ import {
   toast,
 } from '../../ui/index.ts';
 import { LeadFormDrawer } from './LeadFormDrawer.tsx';
+import { ConvertedNotice, ConvertToProjectButton } from './ConvertToProject.tsx';
 import { PricingCard, SystemCard } from './LeadQuoteCards.tsx';
 import { statusTone } from './lead-status.ts';
 
@@ -273,6 +274,9 @@ function LeadView({ lead }: { lead: Lead }) {
                   Delete
                 </Button>
               ))}
+            {editable && !lead.project && lead.status !== LEAD_LOST && (
+              <ConvertToProjectButton leadId={lead.id} />
+            )}
           </div>
         </div>
         <StatusPipeline
@@ -284,6 +288,8 @@ function LeadView({ lead }: { lead: Lead }) {
           }
         />
       </div>
+
+      {lead.project && <ConvertedNotice project={lead.project} />}
 
       {deleted && (
         <Alert tone="warning" title="This lead is deleted">

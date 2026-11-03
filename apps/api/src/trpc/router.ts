@@ -5,6 +5,7 @@ import { contactsRouter } from '../modules/contacts/router.ts';
 import { filesRouter } from '../modules/files/router.ts';
 import { hardwareRouter } from '../modules/hardware/router.ts';
 import { leadsRouter } from '../modules/leads/router.ts';
+import { projectsRouter } from '../modules/projects/router.ts';
 import { savedViewsRouter } from '../modules/saved-views/router.ts';
 import { usersRouter } from '../modules/users/router.ts';
 import { authRouter } from './routers/auth.ts';
@@ -20,6 +21,7 @@ export const appRouter = router({
   contacts: contactsRouter,
   companies: companiesRouter,
   leads: leadsRouter,
+  projects: projectsRouter,
   activities: activitiesRouter,
   savedViews: savedViewsRouter,
   hardware: hardwareRouter,

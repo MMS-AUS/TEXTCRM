@@ -10,14 +10,19 @@ import {
   type LeadSystemInput,
   type LeadSystemValues,
 } from '@mms/shared';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { DetailList } from '../../components/DetailList.tsx';
+import {
+  HardwarePicker,
+  type HardwareKind,
+  type HardwareOption,
+} from '../../components/HardwarePicker.tsx';
 import { errorMessage } from '../../lib/errors.ts';
 import { formatDate } from '../../lib/format.ts';
-import { useDebouncedValue, useOptions } from '../../lib/hooks.ts';
+import { useOptions } from '../../lib/hooks.ts';
 import { useTRPC, type RouterOutputs } from '../../lib/trpc.ts';
 import {
   Alert,
@@ -27,7 +32,6 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
-  Combobox,
   DateInput,
   Dialog,
   DialogBody,
@@ -43,55 +47,8 @@ import {
 } from '../../ui/index.ts';
 
 type Lead = RouterOutputs['leads']['get'];
-type HardwareKind = 'panel' | 'inverter' | 'battery';
-type HardwareOption = { id: string; label: string; spec: string };
 
 const NONE = '__none';
-
-/** Searchable picker over one hardware catalog. */
-function HardwarePicker({
-  kind,
-  value,
-  initial,
-  onChange,
-  props,
-}: {
-  kind: HardwareKind;
-  value: string | null;
-  initial: HardwareOption | null;
-  onChange: (option: HardwareOption | null) => void;
-  props: FieldControlProps;
-}) {
-  const trpc = useTRPC();
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState(initial);
-  const debounced = useDebouncedValue(search, 200);
-  const results = useQuery(trpc.hardware.search.queryOptions({ kind, search: debounced }));
-  const options = results.data ?? [];
-  return (
-    <Combobox
-      {...props}
-      value={value}
-      selectedLabel={selected ? `${selected.label} · ${selected.spec}` : null}
-      options={options.map((option) => ({
-        value: option.id,
-        label: option.label,
-        description: option.spec,
-      }))}
-      loading={results.isFetching}
-      onSearchChange={setSearch}
-      onSelect={(id) => {
-        const option = options.find((o) => o.id === id) ?? null;
-        setSelected(option);
-        onChange(option);
-      }}
-      placeholder={`Choose ${kind === 'inverter' ? 'an' : 'a'} ${kind}`}
-      searchPlaceholder="Search manufacturer or model"
-      emptyText="Nothing in the catalog matches."
-      clearLabel={`No ${kind}`}
-    />
-  );
-}
 
 function SectionCard({
   title,

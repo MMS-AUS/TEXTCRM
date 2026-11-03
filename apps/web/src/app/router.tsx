@@ -20,8 +20,11 @@ import {
   companiesSearchSchema,
   contactsSearchSchema,
   leadsSearchSchema,
+  projectsSearchSchema,
 } from '../pages/list-search.ts';
 import { FeatureGate, PlaceholderPage } from '../pages/PlaceholderPage.tsx';
+import { ProjectDetailPage } from '../pages/projects/ProjectDetailPage.tsx';
+import { ProjectsPage } from '../pages/projects/ProjectsPage.tsx';
 import { Toaster } from '../ui/index.ts';
 import { SETTINGS_FEATURES } from './nav.ts';
 import { ProtectedLayout, type AppServices } from './ProtectedLayout.tsx';
@@ -138,13 +141,21 @@ const companyDetailRoute = createRoute({
 const projectsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/projects',
+  validateSearch: projectsSearchSchema,
   component: () => (
-    <PlaceholderPage
-      title="Projects"
-      description="Sold jobs, from deposit to completed installation."
-      step="Step 2.6"
-      features={['projects']}
-    />
+    <FeatureGate title="Projects" features={['projects']}>
+      <ProjectsPage />
+    </FeatureGate>
+  ),
+});
+
+const projectDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/projects/$projectId',
+  component: () => (
+    <FeatureGate title="Projects" features={['projects']}>
+      <ProjectDetailPage />
+    </FeatureGate>
   ),
 });
 
@@ -186,6 +197,7 @@ export const routeTree = rootRoute.addChildren([
     companiesRoute,
     companyDetailRoute,
     projectsRoute,
+    projectDetailRoute,
     ticketsRoute,
     settingsRoute,
   ]),

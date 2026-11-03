@@ -4,6 +4,9 @@ import {
   CONTACT_SORTS,
   LEAD_SORTS,
   ownerFilterSchema,
+  PROJECT_SORTS,
+  PROJECT_STAGES,
+  PROJECT_STATUSES,
 } from '@mms/shared';
 import { z } from 'zod';
 
@@ -54,5 +57,30 @@ export const leadsSearchSchema = z.object({
   desc: common.desc,
 });
 export type LeadsSearch = z.output<typeof leadsSearchSchema>;
+
+export const projectsSearchSchema = z.object({
+  /** Board (kanban by stage) or table. */
+  view: z.enum(['board', 'table']).optional().catch(undefined),
+  q: common.q,
+  stage: z.array(z.enum(PROJECT_STAGES)).max(20).optional().catch(undefined),
+  /** 'all' shows every status; absent means the default (Active). */
+  status: z
+    .enum([...PROJECT_STATUSES, 'all'])
+    .optional()
+    .catch(undefined),
+  sales: ownerFilterSchema.optional().catch(undefined),
+  state: z.enum(AU_STATES).optional().catch(undefined),
+  dnsp: common.type,
+  finance: common.type,
+  stc: common.type,
+  installer: z.uuid().optional().catch(undefined),
+  from: isoDate,
+  to: isoDate,
+  page: common.page,
+  size: common.size,
+  sort: z.enum(PROJECT_SORTS).optional().catch(undefined),
+  desc: common.desc,
+});
+export type ProjectsSearch = z.output<typeof projectsSearchSchema>;
 
 export { PAGE_SIZES };

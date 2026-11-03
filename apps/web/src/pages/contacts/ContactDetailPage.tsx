@@ -257,7 +257,16 @@ function ContactView({ contact }: { contact: Contact }) {
           empty="No projects for this contact"
           items={contact.projects.map((project) => ({
             id: project.id,
-            title: `${project.projectNumber}${project.title ? ` · ${project.title}` : ''}`,
+            title: (
+              <Link
+                to="/projects/$projectId"
+                params={{ projectId: project.id }}
+                className="hover:text-accent-text hover:underline"
+              >
+                {project.projectNumber}
+                {project.title ? ` · ${project.title}` : ''}
+              </Link>
+            ),
             meta: project.stage,
             badge: project.status,
           }))}

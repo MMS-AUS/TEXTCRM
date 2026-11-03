@@ -6,3 +6,4 @@ export * from './leads.ts';
 export * from './activities.ts';
 export * from './lead-details.ts';
 export * from './files.ts';
+export * from './projects.ts';

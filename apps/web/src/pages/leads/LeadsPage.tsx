@@ -4,6 +4,7 @@ import { functionalUpdate, Link, useNavigate, useSearch } from '@tanstack/react-
 import { Plus, X, Zap } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '../../components/PageHeader.tsx';
+import { SavedViewsMenu } from '../../components/SavedViewsMenu.tsx';
 import { SearchBox } from '../../components/SearchBox.tsx';
 import { errorMessage } from '../../lib/errors.ts';
 import { formatDate, formatRelative, fullName } from '../../lib/format.ts';
@@ -30,7 +31,6 @@ import { leadsSearchSchema, type LeadsSearch } from '../list-search.ts';
 import { BulkActions } from './BulkActions.tsx';
 import { LeadFormDrawer } from './LeadFormDrawer.tsx';
 import { LEAD_STATUSES, startOfWeek, statusTone } from './lead-status.ts';
-import { SavedViewsMenu } from './SavedViewsMenu.tsx';
 
 type LeadRow = RouterOutputs['leads']['list']['rows'][number];
 
@@ -286,6 +286,7 @@ export function LeadsPage() {
         actions={
           <>
             <SavedViewsMenu
+              page="leads"
               current={search}
               onApply={(saved) => {
                 void navigate({ to: '/leads', search: leadsSearchSchema.parse(saved) });

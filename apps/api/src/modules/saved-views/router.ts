@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { savedViews } from '../../db/schema/index.ts';
 import { protectedProcedure, router } from '../../trpc/trpc.ts';
 
-const PAGES = ['leads'] as const;
+const PAGES = ['leads', 'projects'] as const;
 const MAX_VIEWS_PER_PAGE = 30;
 
 /** Each person's own named filter sets per list page. Nobody sees anyone else's. */

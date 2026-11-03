@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bookmark, ChevronDown, Plus, Settings2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { errorMessage } from '../../lib/errors.ts';
-import { useTRPC } from '../../lib/trpc.ts';
+import { errorMessage } from '../lib/errors.ts';
+import { useTRPC } from '../lib/trpc.ts';
 import {
   Alert,
   Button,
@@ -20,20 +20,22 @@ import {
   IconButton,
   Input,
   toast,
-} from '../../ui/index.ts';
+} from '../ui/index.ts';
 
-/** Your own named filter sets for the leads list ("My new Meta leads"). */
+/** Your own named filter sets for a list page ("My new Meta leads"). */
 export function SavedViewsMenu({
+  page,
   current,
   onApply,
 }: {
+  page: 'leads' | 'projects';
   /** The list's current URL search params, saved as-is. */
   current: Record<string, unknown>;
   onApply: (search: Record<string, unknown>) => void;
 }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const views = useQuery(trpc.savedViews.list.queryOptions({ page: 'leads' }));
+  const views = useQuery(trpc.savedViews.list.queryOptions({ page }));
   const create = useMutation(trpc.savedViews.create.mutationOptions());
   const remove = useMutation(trpc.savedViews.remove.mutationOptions());
   const [saving, setSaving] = useState(false);
@@ -49,7 +51,7 @@ export function SavedViewsMenu({
       // Saved without the page number: a view should open on its first page.
       const search = { ...current };
       delete search.page;
-      await create.mutateAsync({ page: 'leads', name, search });
+      await create.mutateAsync({ page, name, search });
       await refresh();
       toast({ title: `Saved "${name.trim()}"`, tone: 'success' });
       setSaving(false);

@@ -55,6 +55,17 @@ export async function hardwareOptions(
   }));
 }
 
+/** One catalog item as a picker option (archived ones too — old records keep them). */
+export async function hardwareOption(
+  db: Db | Tx,
+  kind: HardwareKind,
+  id: string | null | undefined,
+) {
+  if (!id) return null;
+  const [option] = await hardwareOptions(db, kind, eq(TABLES[kind].id, id), 1);
+  return option ?? null;
+}
+
 /** An active catalog item (or the one already on the record, even if since archived). */
 export async function assertHardware(
   db: Db | Tx,

@@ -45,6 +45,7 @@ export {
 export { EmptyState, Skeleton } from './Feedback.tsx';
 export { Field, Label, type FieldControlProps } from './Field.tsx';
 export { Input, Textarea, type InputProps, type TextareaProps } from './Input.tsx';
+export { Popover, PopoverClose, PopoverContent, PopoverTrigger } from './Popover.tsx';
 export { Select, type SelectOption } from './Select.tsx';
 export { Spinner } from './Spinner.tsx';
 export { Switch } from './Switch.tsx';

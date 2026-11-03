@@ -37,9 +37,10 @@ import {
   type LeadValues,
 } from '@mms/shared';
 import type { Db, Tx } from '../../db/client.ts';
-import { activities, contacts, leads, users } from '../../db/schema/index.ts';
+import { activities, contacts, leads, projects, users } from '../../db/schema/index.ts';
 import { permissionProcedure, router } from '../../trpc/trpc.ts';
 import { openTasksWhere, logSystemActivity } from '../activities/service.ts';
+import { findMatchingContact } from '../contacts/match.ts';
 import { leadDetailProcedures, loadLeadDetails } from './details.ts';
 import { diff, entityHistory, recordAudit, type Actor } from '../audit.ts';
 import { assertOption } from '../options.ts';
@@ -207,21 +208,6 @@ async function findDuplicate(db: Db | Tx, candidate: DuplicateCandidate, exclude
     .orderBy(desc(leads.createdAt))
     .limit(50);
   return findDuplicateLead(candidate, rows);
-}
-
-/** An existing active contact with the same email or mobile — the lead gets linked to them. */
-async function matchingContact(db: Db | Tx, values: LeadValues) {
-  const same = or(
-    values.email ? eq(contacts.email, values.email) : undefined,
-    values.mobile ? eq(contacts.mobile, values.mobile) : undefined,
-  );
-  if (!same) return null;
-  const [contact] = await db
-    .select({ id: contacts.id, firstName: contacts.firstName, lastName: contacts.lastName })
-    .from(contacts)
-    .where(and(isNull(contacts.archivedAt), same))
-    .limit(1);
-  return contact ?? null;
 }
 
 /** Stored lead fields: the form values plus area/nearest city from the postcode. */
@@ -445,7 +431,7 @@ export const leadsRouter = router({
       if (!row) throw notFound();
       const { lead } = row;
 
-      const [otherLeads, [openTasks], history, details] = await Promise.all([
+      const [otherLeads, [openTasks], history, details, [project]] = await Promise.all([
         lead.contactId
           ? ctx.db
               .select({
@@ -468,6 +454,10 @@ export const leadsRouter = router({
         ctx.db.select({ total: count() }).from(activities).where(openTasksWhere('lead', lead.id)),
         entityHistory(ctx.db, 'lead', lead.id),
         loadLeadDetails(ctx.db, lead.id),
+        ctx.db
+          .select({ id: projects.id, projectNumber: projects.projectNumber })
+          .from(projects)
+          .where(eq(projects.leadId, lead.id)),
       ]);
 
       return {
@@ -486,6 +476,8 @@ export const leadsRouter = router({
         openTasks: openTasks?.total ?? 0,
         history,
         ...details,
+        /** The project this lead was converted into, if any. */
+        project: project ?? null,
       };
     }),
 
@@ -495,7 +487,7 @@ export const leadsRouter = router({
     .query(async ({ ctx, input }) => {
       const [match, contact] = await Promise.all([
         findDuplicate(ctx.db, input.values, input.excludeId),
-        matchingContact(ctx.db, input.values),
+        findMatchingContact(ctx.db, input.values),
       ]);
       return {
         duplicate: match && {
@@ -531,7 +523,7 @@ export const leadsRouter = router({
         if (match && (match.matchedOn !== 'name' || !input.confirmNotDuplicate)) {
           throw duplicateError(match);
         }
-        const contact = await matchingContact(tx, values);
+        const contact = await findMatchingContact(tx, values);
         const [created] = await tx
           .insert(leads)
           .values({
@@ -574,7 +566,7 @@ export const leadsRouter = router({
         const row = {
           ...leadRow(values),
           leadDate: values.leadDate ?? existing.leadDate,
-          contactId: existing.contactId ?? (await matchingContact(tx, values))?.id ?? null,
+          contactId: existing.contactId ?? (await findMatchingContact(tx, values))?.id ?? null,
         };
         const changes = diff(existing, row);
         if (!changes) return { id: input.id };
