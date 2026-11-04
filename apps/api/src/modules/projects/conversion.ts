@@ -141,6 +141,8 @@ export async function convertLead(
   tx: Tx,
   actor: Actor,
   leadId: string,
+  /** Only for migrated jobs that keep their old number (Step 3.4, e.g. 9979467). */
+  options: { projectNumber?: string } = {},
 ): Promise<{ id: string; projectNumber: string }> {
   // Lock the lead row so two people pressing Convert at once queue up.
   const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId)).for('update');
@@ -221,7 +223,7 @@ export async function convertLead(
   }
 
   // 2. The project.
-  const projectNumber = await nextProjectNumber(tx);
+  const projectNumber = options.projectNumber ?? (await nextProjectNumber(tx));
   const battery = Boolean(system?.batteryId ?? system?.batteryRequired);
   const [project] = await tx
     .insert(projects)

@@ -57,23 +57,24 @@ renders inside the protected layout and app shell (`apps/web/src/app/`).
 
 ## Scripts (run from the repo root)
 
-| Script                                                                   | Does                                                                 |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| `npm run dev`                                                            | API, background worker and web together (auto-restart on change)     |
-| `npm run build`                                                          | Typecheck the API, production build of the web app                   |
-| `npm test`                                                               | Unit tests (no database needed)                                      |
-| `npm run test:integration`                                               | Database tests against `crm_test` (needs `db:up`)                    |
-| `npm run lint`                                                           | ESLint                                                               |
-| `npm run typecheck`                                                      | `tsc --noEmit` in every workspace                                    |
-| `npm run format`                                                         | Prettier                                                             |
-| `npm run db:up` / `db:down`                                              | Start / stop the Postgres container (data is kept in a named volume) |
-| `npm run db:generate`                                                    | Write a new SQL migration after changing `apps/api/src/db/schema/`   |
-| `npm run db:migrate`                                                     | Apply pending migrations to `DATABASE_URL`                           |
-| `npm run db:seed`                                                        | Idempotent reference-data seed (safe to re-run)                      |
-| `npm run db:fake-leads [-- --count 10000]` / `-- --remove`               | **Dev only:** add / remove made-up leads for performance testing     |
-| `npm run db:studio`                                                      | Drizzle Studio — browse the database                                 |
-| `npm run db:reset`                                                       | **Dev only:** wipe the local database and re-apply migrations        |
-| `npm run user:create -w @mms/api -- --email … --name "…" [--role admin]` | Add or re-activate an allowlisted user                               |
+| Script                                                                              | Does                                                                                  |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `npm run dev`                                                                       | API, background worker and web together (auto-restart on change)                      |
+| `npm run build`                                                                     | Typecheck the API, production build of the web app                                    |
+| `npm test`                                                                          | Unit tests (no database needed)                                                       |
+| `npm run test:integration`                                                          | Database tests against `crm_test` (needs `db:up`)                                     |
+| `npm run lint`                                                                      | ESLint                                                                                |
+| `npm run typecheck`                                                                 | `tsc --noEmit` in every workspace                                                     |
+| `npm run format`                                                                    | Prettier                                                                              |
+| `npm run db:up` / `db:down`                                                         | Start / stop the Postgres container (data is kept in a named volume)                  |
+| `npm run db:generate`                                                               | Write a new SQL migration after changing `apps/api/src/db/schema/`                    |
+| `npm run db:migrate`                                                                | Apply pending migrations to `DATABASE_URL`                                            |
+| `npm run db:seed`                                                                   | Idempotent reference-data seed (safe to re-run)                                       |
+| `npm run db:fake-leads [-- --count 10000]` / `-- --remove`                          | **Dev only:** add / remove made-up leads for performance testing                      |
+| `npm run db:studio`                                                                 | Drizzle Studio — browse the database                                                  |
+| `npm run db:reset`                                                                  | **Dev only:** wipe the local database and re-apply migrations                         |
+| `npm run user:create -w @mms/api -- --email … --name "…" [--role admin]`            | Add or re-activate an allowlisted user                                                |
+| `npm run legacy:migrate -- --as you@… [--commit] [--keep-both] [--include-suspect]` | One-off (Step 3.4): move the real records from the old CRM. Dry run unless `--commit` |
 
 ## File storage
 

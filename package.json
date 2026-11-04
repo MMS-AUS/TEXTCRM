@@ -26,7 +26,8 @@
     "db:reset": "npm run db:reset -w @mms/api",
     "db:seed": "npm run db:seed -w @mms/api",
     "db:fake-leads": "npm run db:fake-leads -w @mms/api --",
-    "user:create": "npm run user:create -w @mms/api --"
+    "user:create": "npm run user:create -w @mms/api --",
+    "legacy:migrate": "npm run legacy:migrate -w @mms/api --"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
