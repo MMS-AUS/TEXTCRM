@@ -13,6 +13,7 @@ import type { Db } from './db/client.ts';
 import type { Logger } from './logger.ts';
 import type { JobQueue } from './jobs/queue.ts';
 import { oauthCallbacks } from './integrations/routes.ts';
+import { providerWebhooks } from './integrations/webhooks.ts';
 import { createIntegrations, type Integrations } from './integrations/service.ts';
 import type { SheetsReader } from './modules/imports/google-sheets.ts';
 import type { Storage } from './storage/storage.ts';
@@ -91,7 +92,11 @@ export function createApp(appDeps: AppDeps) {
   app.use(oauthCallbacks({ db: deps.db, integrations: deps.integrations, logger: deps.logger }));
 
   // Reserved for third-party callbacks (Phase 5). Each route there must verify its signature/secret.
-  app.use('/webhooks', limiter(300), express.Router());
+  app.use(
+    '/webhooks',
+    limiter(300),
+    providerWebhooks({ db: deps.db, integrations: deps.integrations, logger: deps.logger }),
+  );
   app.use('/oauth', limiter(30), express.Router());
 
   app.use(notFound);

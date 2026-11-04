@@ -11,6 +11,9 @@ export const activityType = pgEnum('activity_type', [
   'task',
   /** Written by the CRM itself: status changes, assignment, conversion. */
   'system',
+  /** A message sent or received (Phase 5); details in sms_messages / email_messages. */
+  'sms',
+  'email',
 ]);
 
 /** Keep in sync with ACTIVITY_ENTITY_TYPES in packages/shared/src/activities.ts. */

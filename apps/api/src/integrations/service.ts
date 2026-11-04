@@ -47,6 +47,10 @@ export type Integrations = {
   messageMediaEnv: MessageMediaCreds | null;
   /** Where the browser goes after an OAuth callback (the web app). */
   appUrl: string;
+  /** Signs MessageMedia webhook URLs; webhooks are refused without it. */
+  webhookSecret: string | null;
+  /** The API's public base URL for provider callbacks; null when it's only localhost. */
+  publicApiUrl: string | null;
 };
 
 type IntegrationsConfig = Partial<
@@ -62,8 +66,27 @@ type IntegrationsConfig = Partial<
     | 'MESSAGEMEDIA_API_KEY'
     | 'MESSAGEMEDIA_API_SECRET'
     | 'MESSAGEMEDIA_DEFAULT_SENDER'
+    | 'MESSAGEMEDIA_WEBHOOK_SECRET'
+    | 'API_URL'
   >
 > & { APP_URL: string };
+
+/** A URL the internet can call back (not localhost / a private address). */
+function publicUrl(url: string | undefined): string | null {
+  if (!url) return null;
+  try {
+    const host = new URL(url).hostname;
+    if (
+      host === 'localhost' ||
+      host.endsWith('.local') ||
+      /^(127\.|10\.|192\.168\.|::1$)/.test(host)
+    )
+      return null;
+    return url.replace(/\/$/, '');
+  } catch {
+    return null;
+  }
+}
 
 export function createIntegrations(
   config: IntegrationsConfig,
@@ -89,6 +112,8 @@ export function createIntegrations(
           }
         : null,
     appUrl: config.APP_URL,
+    webhookSecret: config.MESSAGEMEDIA_WEBHOOK_SECRET ?? null,
+    publicApiUrl: publicUrl(config.API_URL),
   };
 }
 
@@ -402,7 +427,7 @@ export type TestResult = {
   account: string | null;
 };
 
-async function messageMediaCreds(db: Db | Tx, int: Integrations) {
+export async function messageMediaCreds(db: Db | Tx, int: Integrations) {
   const row = await loadConnection(db, 'messagemedia', null);
   if (row) {
     const stored = decryptJson<{ apiKey: string; apiSecret: string }>(requireKey(int), row.secrets);

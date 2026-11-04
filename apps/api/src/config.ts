@@ -49,6 +49,13 @@ const configSchema = z.object({
   MESSAGEMEDIA_API_KEY: optionalString,
   MESSAGEMEDIA_API_SECRET: optionalString,
   MESSAGEMEDIA_DEFAULT_SENDER: optionalString,
+  /** Signs MessageMedia webhook URLs (any long random string; we generate it). */
+  MESSAGEMEDIA_WEBHOOK_SECRET: optionalString,
+  /**
+   * The API's public address, for callbacks providers make (e.g. SMS delivery reports).
+   * A localhost address can't be reached from the internet, so those callbacks are skipped.
+   */
+  API_URL: z.preprocess((v) => (v === '' ? undefined : v), z.url().optional()),
   /** true for local S3 servers (bucket in the path); false for R2. */
   S3_FORCE_PATH_STYLE: z
     .enum(['true', 'false', ''])

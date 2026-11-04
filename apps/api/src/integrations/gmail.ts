@@ -132,3 +132,89 @@ export async function gmailRevoke(fetchImpl: Fetch, token: string): Promise<void
     throw apiError('gmail', response.status, response.body, 'revoke access');
   }
 }
+
+// ── Sending (Step 5.2) ───────────────────────────────────────────────────
+
+export const GMAIL_SEND_URL = 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send';
+
+/** RFC 2047 encoded-word for non-ASCII header text (subject, display names). */
+function encodeHeader(value: string): string {
+  return /^[\x20-\x7e]*$/.test(value)
+    ? value
+    : `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
+}
+
+const mailbox = (name: string | null, address: string) =>
+  name ? `${encodeHeader(name.replace(/["\\<>]/g, ''))} <${address}>` : address;
+
+/** Base64 body wrapped at 76 characters (RFC 2045). */
+const base64Lines = (text: string) =>
+  Buffer.from(text, 'utf8').toString('base64').replace(/.{76}/g, '$&\r\n');
+
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/** The plain text as simple HTML: escaped, paragraphs and line breaks kept. */
+export function textToHtml(text: string): string {
+  const paragraphs = text
+    .split(/\n{2,}/)
+    .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`);
+  return `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5">${paragraphs.join('')}</div>`;
+}
+
+export type OutgoingEmail = {
+  from: { name: string | null; address: string };
+  to: string[];
+  cc: string[];
+  subject: string;
+  text: string;
+};
+
+/** An RFC 5322 message (multipart/alternative: text + HTML). Inputs are header-safe (zod). */
+export function buildMime(
+  email: OutgoingEmail,
+  boundary = `mms-${Date.now().toString(36)}`,
+): string {
+  const headers = [
+    `From: ${mailbox(email.from.name, email.from.address)}`,
+    `To: ${email.to.join(', ')}`,
+    ...(email.cc.length ? [`Cc: ${email.cc.join(', ')}`] : []),
+    `Subject: ${encodeHeader(email.subject)}`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+  ];
+  const part = (type: string, body: string) =>
+    [
+      `--${boundary}`,
+      `Content-Type: ${type}; charset="UTF-8"`,
+      'Content-Transfer-Encoding: base64',
+      '',
+      base64Lines(body),
+    ].join('\r\n');
+  return [
+    ...headers,
+    '',
+    part('text/plain', email.text),
+    part('text/html', textToHtml(email.text)),
+    `--${boundary}--`,
+    '',
+  ].join('\r\n');
+}
+
+/** Sends through the user's own mailbox; Gmail files it in their Sent folder. */
+export async function gmailSend(fetchImpl: Fetch, accessToken: string, mime: string) {
+  const response = await call(fetchImpl, 'gmail', GMAIL_SEND_URL, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw: Buffer.from(mime, 'utf8').toString('base64url') }),
+  });
+  if (!response.ok) throw apiError('gmail', response.status, response.body, 'send the email');
+  const id = field(response.body, 'id');
+  if (!id)
+    throw new ProviderError(
+      'gmail',
+      'provider',
+      'Gmail accepted the email but returned no message id.',
+    );
+  return { messageId: id, threadId: field(response.body, 'threadId') ?? null };
+}

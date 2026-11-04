@@ -9,6 +9,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarClock,
   ListTodo,
+  Mail,
+  MessageSquare,
   MoreHorizontal,
   Phone,
   PhoneIncoming,
@@ -323,6 +325,8 @@ const ICONS: Record<Activity['type'], ReactNode> = {
   meeting: <UsersRound />,
   task: <ListTodo />,
   system: <Sparkles />,
+  sms: <MessageSquare />,
+  email: <Mail />,
 };
 
 function dueTone(dueAt: string): 'danger' | 'warning' | 'neutral' {
@@ -377,6 +381,16 @@ function Entry({
       break;
     case 'system':
       title = activity.subject;
+      break;
+    // Messages (Phase 5): the subject says who it went to or came from.
+    case 'sms':
+      title =
+        activity.direction === 'inbound'
+          ? (activity.subject ?? 'SMS received')
+          : `${author} sent an ${activity.subject ?? 'SMS'}`;
+      break;
+    case 'email':
+      title = `${author} emailed: ${activity.subject ?? ''}`;
       break;
   }
 

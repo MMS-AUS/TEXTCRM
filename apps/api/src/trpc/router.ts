@@ -8,6 +8,7 @@ import { filesRouter } from '../modules/files/router.ts';
 import { hardwareRouter } from '../modules/hardware/router.ts';
 import { importsRouter } from '../modules/imports/router.ts';
 import { integrationsRouter } from '../modules/integrations/router.ts';
+import { messagingRouter } from '../modules/messaging/router.ts';
 import { jobsRouter } from '../modules/jobs/router.ts';
 import { leadsRouter } from '../modules/leads/router.ts';
 import { projectsRouter } from '../modules/projects/router.ts';
@@ -38,6 +39,7 @@ export const appRouter = router({
   files: filesRouter,
   jobs: jobsRouter,
   integrations: integrationsRouter,
+  messaging: messagingRouter,
   imports: importsRouter,
   sheetSync: sheetSyncRouter,
 });
