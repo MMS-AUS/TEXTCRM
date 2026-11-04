@@ -8,6 +8,7 @@ import { importsRouter } from '../modules/imports/router.ts';
 import { jobsRouter } from '../modules/jobs/router.ts';
 import { leadsRouter } from '../modules/leads/router.ts';
 import { projectsRouter } from '../modules/projects/router.ts';
+import { sheetSyncRouter } from '../modules/sheet-sync/router.ts';
 import { savedViewsRouter } from '../modules/saved-views/router.ts';
 import { usersRouter } from '../modules/users/router.ts';
 import { authRouter } from './routers/auth.ts';
@@ -30,6 +31,7 @@ export const appRouter = router({
   files: filesRouter,
   jobs: jobsRouter,
   imports: importsRouter,
+  sheetSync: sheetSyncRouter,
 });
 
 /** Imported (type-only) by apps/web for end-to-end type safety. */

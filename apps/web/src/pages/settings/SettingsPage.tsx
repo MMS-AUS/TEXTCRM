@@ -1,12 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronRight, Cog, FileSpreadsheet, Upload } from 'lucide-react';
+import { ChevronRight, Cog, FileSpreadsheet, RefreshCw, Upload } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { PageHeader } from '../../components/PageHeader.tsx';
 import { useCan } from '../../lib/hooks.ts';
 import { Alert, Card, EmptyState } from '../../ui/index.ts';
 
 type Section = {
-  to: '/settings/jobs' | '/settings/imports';
+  to: '/settings/jobs' | '/settings/imports' | '/settings/sheet-sync';
   title: string;
   description: string;
   icon: ReactNode;
@@ -25,6 +25,13 @@ export function SettingsPage() {
       description: 'Bring leads or contacts in from a CSV, Excel file or Google Sheet.',
       icon: <Upload />,
       visible: canImport('leads') || canImport('contacts'),
+    },
+    {
+      to: '/settings/sheet-sync',
+      title: 'Live sheet sync',
+      description: 'New rows in your lead sheets become leads every few minutes.',
+      icon: <RefreshCw />,
+      visible: can('integrations', 'view'),
     },
     {
       to: '/settings/jobs',

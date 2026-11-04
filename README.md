@@ -95,6 +95,12 @@ Google Sheets are read with a service account: set `GOOGLE_SERVICE_ACCOUNT_PATH`
 its JSON key (kept outside the repo), then share each sheet with the service account's email as
 **Viewer**. Without it, uploads still work and the wizard explains what is missing.
 
+Settings → Live sheet sync keeps lead-intake sheets flowing in: every
+`SHEETS_SYNC_INTERVAL_MINUTES` (default 5) the worker reads each enabled sheet. Each row needs a
+unique `Lead ID`. The sheet creates leads; once anyone changes a lead in the CRM, the sheet never
+changes it again. The CRM never writes to the sheet. Every run, with its row errors, is listed
+in Settings.
+
 ## Database
 
 - Local Postgres 18 in Docker, bound to `127.0.0.1:5432`, user/password/db `crm`/`crm`/`crm`.

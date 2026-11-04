@@ -372,8 +372,17 @@ function LeadView({ lead }: { lead: Lead }) {
                   { label: 'Sales person', value: lead.ownerName ?? 'Unassigned' },
                   {
                     label: 'Created',
-                    value: `${formatDate(lead.createdAt)}${lead.createdByName ? ` by ${lead.createdByName}` : ''}`,
+                    value: `${formatDate(lead.createdAt)}${
+                      lead.createdByName
+                        ? ` by ${lead.createdByName}`
+                        : lead.sheetSourceId
+                          ? ' from the live sheet'
+                          : ''
+                    }`,
                   },
+                  ...(lead.sheetSourceId && lead.sheetLeadId
+                    ? [{ label: 'Live sheet', value: sheetOwnership(lead) }]
+                    : []),
                 ]}
               />
               {lead.notes && (
@@ -473,6 +482,20 @@ function LeadView({ lead }: { lead: Lead }) {
       />
     </div>
   );
+}
+
+/** Whether the live sheet still updates this lead (§1.8 "the Sheet creates, the CRM owns after"). */
+function sheetOwnership(lead: {
+  sheetLeadId: string | null;
+  crmEditedAt: string | null;
+  createdByUserId: string | null;
+}) {
+  const id = `Lead ID ${lead.sheetLeadId ?? ''}`;
+  if (lead.createdByUserId) return `${id} · linked; the CRM owns this lead`;
+  if (lead.crmEditedAt) {
+    return `${id} · edited in the CRM ${formatDate(lead.crmEditedAt)}, so the sheet no longer changes it`;
+  }
+  return `${id} · corrections in the sheet still update it until someone edits it here`;
 }
 
 export function LeadDetailPage() {

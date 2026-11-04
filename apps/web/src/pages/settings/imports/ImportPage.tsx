@@ -10,6 +10,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { ArrowRight, Download, Play, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { ColumnMappingTable } from '../../../components/ColumnMappingTable.tsx';
 import { ConfirmDialog } from '../../../components/ConfirmDialog.tsx';
 import { PageHeader } from '../../../components/PageHeader.tsx';
 import { errorMessage } from '../../../lib/errors.ts';
@@ -47,7 +48,6 @@ import { When } from '../../../components/When.tsx';
 type Job = RouterOutputs['imports']['get'];
 type Source = RouterOutputs['imports']['source'];
 
-const NOT_IMPORTED = '__none';
 const ALL = '__all';
 
 function useRefresh() {
@@ -69,15 +69,6 @@ function MappingForm({ job, source }: { job: Job; source: Source }) {
   const problems = mappingProblems(job.target, mapping);
   const changedSincePreview =
     job.status === 'previewed' && JSON.stringify(mapping) !== JSON.stringify(job.mapping ?? {});
-  const headerOptions = [
-    { value: NOT_IMPORTED, label: '— Not imported —' },
-    ...source.headers.map((header) => ({ value: header, label: header })),
-  ];
-  const sample = (header: string | undefined) => {
-    if (!header) return null;
-    const index = source.headers.indexOf(header);
-    return source.sampleRows.map((row) => row[index]).find((value) => value) ?? null;
-  };
 
   const runPreview = () => {
     preview
@@ -121,48 +112,13 @@ function MappingForm({ job, source }: { job: Job; source: Source }) {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        <Table aria-label="Column mapping">
-          <TableHead>
-            <tr>
-              <TableHeaderCell>CRM field</TableHeaderCell>
-              <TableHeaderCell>Spreadsheet column</TableHeaderCell>
-              <TableHeaderCell>First value</TableHeaderCell>
-            </tr>
-          </TableHead>
-          <tbody>
-            {fields.map((field) => {
-              const header = mapping[field.key];
-              const example = sample(header);
-              return (
-                <TableRow key={field.key}>
-                  <TableCell wrap>
-                    <span className="block font-medium">{field.label}</span>
-                    {field.hint && <span className="text-xs text-fg-muted">{field.hint}</span>}
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      aria-label={`Column for ${field.label}`}
-                      className="w-56"
-                      value={header ?? NOT_IMPORTED}
-                      onValueChange={(value) => {
-                        setMapping((current) => {
-                          const rest = Object.fromEntries(
-                            Object.entries(current).filter(([key]) => key !== field.key),
-                          );
-                          return value === NOT_IMPORTED ? rest : { ...rest, [field.key]: value };
-                        });
-                      }}
-                      options={headerOptions}
-                    />
-                  </TableCell>
-                  <TableCell wrap className="max-w-xs text-fg-muted">
-                    {example ?? (header ? <span className="text-fg-subtle">empty</span> : '')}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </tbody>
-        </Table>
+        <ColumnMappingTable
+          fields={fields}
+          headers={source.headers}
+          sampleRows={source.sampleRows}
+          mapping={mapping}
+          onChange={setMapping}
+        />
         {problems.length > 0 && (
           <Alert tone="warning" title="Before you preview">
             {problems.join(' ')}

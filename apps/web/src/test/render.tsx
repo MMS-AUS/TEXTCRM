@@ -133,6 +133,9 @@ export function renderPage(
     '/settings',
     '/settings/imports',
     '/settings/imports/$importId',
+    '/settings/sheet-sync',
+    '/settings/sheet-sync/new',
+    '/settings/sheet-sync/$sourceId',
   ]
     .filter((stub) => stub !== path)
     .map((stub) =>

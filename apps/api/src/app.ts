@@ -18,7 +18,8 @@ import { createContextFactory } from './trpc/context.ts';
 import { appRouter } from './trpc/router.ts';
 
 export interface AppDeps {
-  config: Pick<Config, 'APP_URL' | 'ALLOWED_EMAIL_DOMAIN'>;
+  config: Pick<Config, 'APP_URL' | 'ALLOWED_EMAIL_DOMAIN'> &
+    Partial<Pick<Config, 'SHEETS_SYNC_INTERVAL_MINUTES'>>;
   db: Db;
   logger: Logger;
   verifyIdToken: VerifyIdToken;

@@ -23,10 +23,13 @@ export interface Context {
   jobs: JobQueue | null;
   /** Null when GOOGLE_SERVICE_ACCOUNT_PATH isn't set. */
   sheets: SheetsReader | null;
+  /** How often the live sheet sync runs (SHEETS_SYNC_INTERVAL_MINUTES). */
+  syncIntervalMinutes: number;
 }
 
 export interface ContextDeps {
-  config: Pick<Config, 'ALLOWED_EMAIL_DOMAIN'>;
+  config: Pick<Config, 'ALLOWED_EMAIL_DOMAIN'> &
+    Partial<Pick<Config, 'SHEETS_SYNC_INTERVAL_MINUTES'>>;
   db: Db;
   verifyIdToken: VerifyIdToken;
   storage: Storage | null;
@@ -46,6 +49,7 @@ export function createContextFactory(deps: ContextDeps) {
     storage: deps.storage,
     jobs: deps.jobs,
     sheets: deps.sheets,
+    syncIntervalMinutes: deps.config.SHEETS_SYNC_INTERVAL_MINUTES ?? 5,
     log: req.log,
     auth: await authenticate(req.headers.authorization, authDeps),
     meta: {

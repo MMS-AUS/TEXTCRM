@@ -5,7 +5,9 @@ import { createDb } from './db/client.ts';
 import { cleanupPendingUploads } from './jobs/cleanup.ts';
 import { createBoss, ensureQueues, QUEUES, type QueueName } from './jobs/queue.ts';
 import { createLogger } from './logger.ts';
+import { createSheetsReader, type SheetsReader } from './modules/imports/google-sheets.ts';
 import { runImport } from './modules/imports/service.ts';
+import { syncCron, syncEnabledSources, syncSheetSource } from './modules/sheet-sync/sync.ts';
 import { createStorage } from './storage/storage.ts';
 
 // The background worker (Step 3.1): a separate process from the API, so a long import or sync
@@ -48,7 +50,17 @@ async function handle<T extends object>(
   });
 }
 
+let sheets: SheetsReader | null = null;
+
 async function start() {
+  try {
+    sheets = await createSheetsReader(config.GOOGLE_SERVICE_ACCOUNT_PATH);
+  } catch (error) {
+    logger.error(
+      { err: error },
+      'Could not read the Google service-account key — sheet sync is off.',
+    );
+  }
   await boss.start();
   await ensureQueues(boss);
 
@@ -59,6 +71,13 @@ async function start() {
   await handle<{ importId: string }>(QUEUES.runImport, (data) =>
     runImport(db, data.importId, logger.child({ queue: QUEUES.runImport })),
   );
+  // Live leads sync (Step 3.3): the schedule syncs every enabled sheet; "Sync now" sends one.
+  await handle<{ sourceId?: string }>(QUEUES.syncSheets, async (data) => {
+    const log = logger.child({ queue: QUEUES.syncSheets });
+    if (!data.sourceId) return syncEnabledSources(db, sheets, log);
+    if (!sheets) throw new Error('GOOGLE_SERVICE_ACCOUNT_PATH is not set');
+    return (await syncSheetSource(db, sheets, data.sourceId, 'manual', log)) ?? undefined;
+  });
   // Jobs that failed every retry: logged loudly; the original stays listed as failed.
   await handle<object>(QUEUES.deadLetter, (data, job) => {
     logger.error({ jobId: job.id, data }, 'A job failed after every retry');
@@ -66,6 +85,14 @@ async function start() {
   });
 
   await boss.schedule(QUEUES.heartbeat, '* * * * *', null, { tz: BUSINESS_TIME_ZONE });
+  await boss.schedule(
+    QUEUES.syncSheets,
+    syncCron(config.SHEETS_SYNC_INTERVAL_MINUTES),
+    {},
+    {
+      tz: BUSINESS_TIME_ZONE,
+    },
+  );
   await boss.schedule(QUEUES.cleanupUploads, '17 * * * *', null, { tz: BUSINESS_TIME_ZONE });
 
   logger.info('Worker started');

@@ -28,6 +28,11 @@ import { ProjectsPage } from '../pages/projects/ProjectsPage.tsx';
 import { ImportPage } from '../pages/settings/imports/ImportPage.tsx';
 import { ImportsPage } from '../pages/settings/imports/ImportsPage.tsx';
 import { JobsPage } from '../pages/settings/JobsPage.tsx';
+import {
+  NewSheetSourcePage,
+  SheetSourcePage,
+} from '../pages/settings/sheet-sync/SheetSourcePage.tsx';
+import { SheetSyncPage } from '../pages/settings/sheet-sync/SheetSyncPage.tsx';
 import { SettingsPage } from '../pages/settings/SettingsPage.tsx';
 import { Toaster } from '../ui/index.ts';
 import { SETTINGS_FEATURES } from './nav.ts';
@@ -216,6 +221,36 @@ const importRoute = createRoute({
   ),
 });
 
+const sheetSyncRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/sheet-sync',
+  component: () => (
+    <FeatureGate title="Live sheet sync" features={['integrations']}>
+      <SheetSyncPage />
+    </FeatureGate>
+  ),
+});
+
+const newSheetSourceRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/sheet-sync/new',
+  component: () => (
+    <FeatureGate title="Live sheet sync" features={['integrations']}>
+      <NewSheetSourcePage />
+    </FeatureGate>
+  ),
+});
+
+const sheetSourceRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/sheet-sync/$sourceId',
+  component: () => (
+    <FeatureGate title="Live sheet sync" features={['integrations']}>
+      <SheetSourcePage />
+    </FeatureGate>
+  ),
+});
+
 export const routeTree = rootRoute.addChildren([
   designRoute,
   appRoute.addChildren([
@@ -234,6 +269,9 @@ export const routeTree = rootRoute.addChildren([
     jobsRoute,
     importsRoute,
     importRoute,
+    sheetSyncRoute,
+    newSheetSourceRoute,
+    sheetSourceRoute,
   ]),
 ]);
 

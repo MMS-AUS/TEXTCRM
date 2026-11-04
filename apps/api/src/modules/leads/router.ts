@@ -329,7 +329,12 @@ async function setDeleted(
   }
   await tx
     .update(leads)
-    .set({ deletedAt: deleted ? new Date() : null, updatedByUserId: ctx.user.id })
+    // Deleting or restoring is a CRM decision too: the live sheet no longer changes this lead.
+    .set({
+      deletedAt: deleted ? new Date() : null,
+      crmEditedAt: existing.crmEditedAt ?? new Date(),
+      updatedByUserId: ctx.user.id,
+    })
     .where(eq(leads.id, id));
   await recordAudit(tx, actorOf(ctx), {
     action: deleted ? 'delete' : 'restore',
