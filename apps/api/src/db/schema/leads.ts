@@ -85,6 +85,8 @@ export const leads = pgTable(
     index('leads_owner_idx').on(t.ownerUserId),
     index('leads_lead_date_idx').on(t.leadDate),
     index('leads_platform_idx').on(t.platform),
+    // Dashboard (Step 2.9): conversions by salesperson.
+    index('leads_converted_at_idx').on(t.convertedAt),
     index('leads_contact_idx').on(t.contactId),
     index('leads_email_idx').on(t.email),
     index('leads_mobile_idx').on(t.mobile),

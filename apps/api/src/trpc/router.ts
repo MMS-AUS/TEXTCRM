@@ -2,6 +2,7 @@ import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import { activitiesRouter } from '../modules/activities/router.ts';
 import { companiesRouter } from '../modules/companies/router.ts';
 import { contactsRouter } from '../modules/contacts/router.ts';
+import { dashboardRouter } from '../modules/dashboard/router.ts';
 import { filesRouter } from '../modules/files/router.ts';
 import { hardwareRouter } from '../modules/hardware/router.ts';
 import { importsRouter } from '../modules/imports/router.ts';
@@ -19,6 +20,7 @@ import { router } from './trpc.ts';
 
 export const appRouter = router({
   health: healthRouter,
+  dashboard: dashboardRouter,
   auth: authRouter,
   optionLists: optionListsRouter,
   users: usersRouter,

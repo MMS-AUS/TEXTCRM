@@ -65,6 +65,8 @@ export const projects = pgTable(
   (t) => [
     index('projects_status_idx').on(t.status),
     index('projects_stage_idx').on(t.stage),
+    // Dashboard (Step 2.9): revenue by sale month.
+    index('projects_sale_date_idx').on(t.saleDate),
     index('projects_contact_idx').on(t.contactId),
     index('projects_sales_user_idx').on(t.salesUserId),
   ],
@@ -169,25 +171,30 @@ export const projectWarehouse = pgTable('project_warehouse', {
   ...timestamps,
 });
 
-export const projectInstallation = pgTable('project_installation', {
-  projectId: projectIdPk(),
-  /** Option value from `installationStatuses`. */
-  status: text(),
-  bookingDate: day(),
-  bookedByUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
-  /** The legacy "completed month" is derived from this date. */
-  completedDate: day(),
-  /** Subcontractor installer = a company of type 'Subcontractor Installer'. */
-  installerCompanyId: uuid().references(() => companies.id, { onDelete: 'set null' }),
-  installerQuotedAud: money(),
-  docsStatus: text(),
-  docsReceivedDate: day(),
-  installerInvoiceDate: day(),
-  installerInvoiceNumber: text(),
-  installerInvoiceAmountAud: money(),
-  installerInvoiceStatus: text(),
-  ...timestamps,
-});
+export const projectInstallation = pgTable(
+  'project_installation',
+  {
+    projectId: projectIdPk(),
+    /** Option value from `installationStatuses`. */
+    status: text(),
+    bookingDate: day(),
+    bookedByUserId: uuid().references(() => users.id, { onDelete: 'set null' }),
+    /** The legacy "completed month" is derived from this date. */
+    completedDate: day(),
+    /** Subcontractor installer = a company of type 'Subcontractor Installer'. */
+    installerCompanyId: uuid().references(() => companies.id, { onDelete: 'set null' }),
+    installerQuotedAud: money(),
+    docsStatus: text(),
+    docsReceivedDate: day(),
+    installerInvoiceDate: day(),
+    installerInvoiceNumber: text(),
+    installerInvoiceAmountAud: money(),
+    installerInvoiceStatus: text(),
+    ...timestamps,
+  },
+  // Dashboard (Step 2.9): installs this month.
+  (t) => [index('project_installation_completed_idx').on(t.completedDate, t.bookingDate)],
+);
 
 export const projectStcClaims = pgTable('project_stc_claims', {
   projectId: projectIdPk(),
