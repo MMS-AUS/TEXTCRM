@@ -104,4 +104,11 @@ export const ticketsSearchSchema = z.object({
 });
 export type TicketsSearch = z.output<typeof ticketsSearchSchema>;
 
+/** What the OAuth callback appends to /settings/integrations. */
+export const integrationsSearchSchema = z.object({
+  provider: z.enum(['gmail', 'xero']).optional().catch(undefined),
+  result: z.enum(['connected', 'error']).optional().catch(undefined),
+  message: z.string().max(500).optional().catch(undefined),
+});
+
 export { PAGE_SIZES };

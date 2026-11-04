@@ -21,6 +21,7 @@ import {
   contactsSearchSchema,
   leadsSearchSchema,
   projectsSearchSchema,
+  integrationsSearchSchema,
   ticketsSearchSchema,
 } from '../pages/list-search.ts';
 import { FeatureGate } from '../pages/PlaceholderPage.tsx';
@@ -35,6 +36,7 @@ import { RolesPage } from '../pages/settings/admin/RolesPage.tsx';
 import { OptionListsPage } from '../pages/settings/admin/OptionListsPage.tsx';
 import { HardwarePage } from '../pages/settings/admin/HardwarePage.tsx';
 import { CompanyPage } from '../pages/settings/admin/CompanyPage.tsx';
+import { IntegrationsPage } from '../pages/settings/integrations/IntegrationsPage.tsx';
 import { JobsPage } from '../pages/settings/JobsPage.tsx';
 import {
   NewSheetSourcePage,
@@ -317,6 +319,14 @@ const companySettingsRoute = createRoute({
   ),
 });
 
+// Everyone may open it: Gmail is each person's own; the organisation cards need integrations.
+const integrationsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/integrations',
+  validateSearch: integrationsSearchSchema,
+  component: IntegrationsPage,
+});
+
 export const routeTree = rootRoute.addChildren([
   designRoute,
   appRoute.addChildren([
@@ -344,6 +354,7 @@ export const routeTree = rootRoute.addChildren([
     optionListsSettingsRoute,
     hardwareSettingsRoute,
     companySettingsRoute,
+    integrationsRoute,
   ]),
 ]);
 

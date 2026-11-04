@@ -6,6 +6,7 @@ import {
   Cpu,
   FileSpreadsheet,
   ListChecks,
+  PlugZap,
   RefreshCw,
   ShieldCheck,
   Upload,
@@ -25,7 +26,8 @@ type Section = {
     | '/settings/company'
     | '/settings/imports'
     | '/settings/sheet-sync'
-    | '/settings/jobs';
+    | '/settings/jobs'
+    | '/settings/integrations';
   title: string;
   description: string;
   icon: ReactNode;
@@ -92,6 +94,13 @@ export function SettingsPage() {
           description: 'Leads, contacts or catalogue items from a CSV, Excel file or Google Sheet.',
           icon: <Upload />,
           visible: canWrite('leads') || canWrite('contacts') || canWrite('hardware'),
+        },
+        {
+          to: '/settings/integrations',
+          title: 'Integrations',
+          description: 'Gmail, Xero and MessageMedia SMS: connect, test, disconnect.',
+          icon: <PlugZap />,
+          visible: true,
         },
         {
           to: '/settings/sheet-sync',

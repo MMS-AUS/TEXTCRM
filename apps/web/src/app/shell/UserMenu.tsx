@@ -1,4 +1,5 @@
-import { ChevronDown, LogOut } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
+import { ChevronDown, LogOut, PlugZap } from 'lucide-react';
 import { useAuth, useProfile } from '../../auth/auth-context.ts';
 import {
   Avatar,
@@ -15,6 +16,7 @@ import {
 export function UserMenu() {
   const profile = useProfile();
   const { signOut } = useAuth();
+  const navigate = useNavigate();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -45,6 +47,14 @@ export function UserMenu() {
           <Badge tone="accent">{profile.role.name}</Badge>
         </div>
         <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => {
+            void navigate({ to: '/settings/integrations' });
+          }}
+        >
+          <PlugZap />
+          Connected accounts
+        </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={() => {
             void signOut();
