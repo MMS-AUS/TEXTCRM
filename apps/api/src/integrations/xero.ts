@@ -10,13 +10,19 @@ export const XERO_REVOKE_URL = 'https://identity.xero.com/connect/revocation';
 export const XERO_CONNECTIONS_URL = 'https://api.xero.com/connections';
 export const XERO_API_URL = 'https://api.xero.com/api.xro/2.0';
 
-/** §2.2 Xero scopes; offline_access gives the refresh token. */
+/**
+ * Xero scopes; offline_access gives the refresh token. Apps created on or after 2 March 2026
+ * can't request the broad accounting.transactions scope — it is split into granular scopes
+ * (invoices, payments, bank transactions are what the CRM needs).
+ */
 export const XERO_SCOPES = [
   'openid',
   'profile',
   'email',
   'offline_access',
-  'accounting.transactions',
+  'accounting.invoices',
+  'accounting.payments',
+  'accounting.banktransactions',
   'accounting.contacts',
   'accounting.settings',
 ];

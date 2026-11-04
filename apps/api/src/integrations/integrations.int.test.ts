@@ -293,7 +293,7 @@ describe('integrations backend (Phase 5)', () => {
             access_token: jwt({ authentication_event_id: authEvent }),
             refresh_token: 'x-refresh-1',
             expires_in: 1800,
-            scope: 'openid accounting.transactions',
+            scope: 'openid accounting.invoices accounting.payments',
           },
         };
       });

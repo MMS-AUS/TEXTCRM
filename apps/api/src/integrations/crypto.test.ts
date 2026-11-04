@@ -8,7 +8,7 @@ import {
   parseEncryptionKey,
 } from './crypto.ts';
 import { jwtClaims, needsRefresh, pkce } from './oauth.ts';
-import { tenantsFromThisSignIn } from './xero.ts';
+import { tenantsFromThisSignIn, XERO_SCOPES } from './xero.ts';
 
 const key = randomBytes(32);
 
@@ -76,5 +76,21 @@ describe('OAuth helpers', () => {
         tenant('practice', 'ev-2', 'PRACTICEMANAGER'),
       ]).map((t) => t.tenantId),
     ).toEqual(['new']);
+  });
+});
+
+describe('Xero scopes', () => {
+  it('uses the granular scopes (no retired accounting.transactions)', () => {
+    expect(XERO_SCOPES).toEqual([
+      'openid',
+      'profile',
+      'email',
+      'offline_access',
+      'accounting.invoices',
+      'accounting.payments',
+      'accounting.banktransactions',
+      'accounting.contacts',
+      'accounting.settings',
+    ]);
   });
 });
