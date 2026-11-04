@@ -32,3 +32,8 @@ export type AuthState =
   /** A genuine Google identity that is not allowed into the CRM. */
   | { status: 'denied'; reason: DenyReason; email: string | null; userId: string | null }
   | { status: 'authenticated'; user: AuthUser; firebaseUid: string };
+
+/** Ends a user's Firebase sessions (all devices) — used when an admin deactivates someone. */
+export interface SessionRevoker {
+  revoke(firebaseUid: string): Promise<void>;
+}

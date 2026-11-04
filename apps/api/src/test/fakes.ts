@@ -46,6 +46,8 @@ export function fakeContext(auth: AuthState, overrides: Partial<Context> = {}): 
     jobs: null,
     sheets: null,
     syncIntervalMinutes: 5,
+    sessions: null,
+    allowedEmailDomain: 'makemysolar.com.au',
     log: silentLogger,
     auth,
     meta: { requestId: 'test-request', ipAddress: '127.0.0.1', userAgent: 'vitest' },

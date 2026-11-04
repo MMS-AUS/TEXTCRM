@@ -1,4 +1,5 @@
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import { adminRouter } from '../modules/admin/router.ts';
 import { activitiesRouter } from '../modules/activities/router.ts';
 import { companiesRouter } from '../modules/companies/router.ts';
 import { contactsRouter } from '../modules/contacts/router.ts';
@@ -21,6 +22,7 @@ import { router } from './trpc.ts';
 export const appRouter = router({
   health: healthRouter,
   dashboard: dashboardRouter,
+  admin: adminRouter,
   auth: authRouter,
   optionLists: optionListsRouter,
   users: usersRouter,

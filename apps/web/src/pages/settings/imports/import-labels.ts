@@ -1,7 +1,13 @@
 import type { ImportAction, ImportTarget } from '@mms/shared';
 import type { BadgeTone } from '../../../ui/index.ts';
 
-export const TARGET_LABELS: Record<ImportTarget, string> = { leads: 'Leads', contacts: 'Contacts' };
+export const TARGET_LABELS: Record<ImportTarget, string> = {
+  leads: 'Leads',
+  contacts: 'Contacts',
+  panels: 'Panels',
+  inverters: 'Inverters',
+  batteries: 'Batteries',
+};
 
 export const STATUS_LABELS: Record<string, string> = {
   uploading: 'Uploading',

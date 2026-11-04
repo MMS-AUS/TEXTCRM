@@ -30,6 +30,11 @@ import { ImportPage } from '../pages/settings/imports/ImportPage.tsx';
 import { ImportsPage } from '../pages/settings/imports/ImportsPage.tsx';
 import { TicketDetailPage } from '../pages/tickets/TicketDetailPage.tsx';
 import { TicketsPage } from '../pages/tickets/TicketsPage.tsx';
+import { UsersPage } from '../pages/settings/admin/UsersPage.tsx';
+import { RolesPage } from '../pages/settings/admin/RolesPage.tsx';
+import { OptionListsPage } from '../pages/settings/admin/OptionListsPage.tsx';
+import { HardwarePage } from '../pages/settings/admin/HardwarePage.tsx';
+import { CompanyPage } from '../pages/settings/admin/CompanyPage.tsx';
 import { JobsPage } from '../pages/settings/JobsPage.tsx';
 import {
   NewSheetSourcePage,
@@ -262,6 +267,56 @@ const sheetSourceRoute = createRoute({
   ),
 });
 
+const usersSettingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/users',
+  component: () => (
+    <FeatureGate title="Users" features={['users']}>
+      <UsersPage />
+    </FeatureGate>
+  ),
+});
+
+const rolesSettingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/roles',
+  component: () => (
+    <FeatureGate title="Roles & permissions" features={['roles']}>
+      <RolesPage />
+    </FeatureGate>
+  ),
+});
+
+const optionListsSettingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/option-lists',
+  component: () => (
+    <FeatureGate title="Option lists" features={['option_lists']}>
+      <OptionListsPage />
+    </FeatureGate>
+  ),
+});
+
+const hardwareSettingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/hardware',
+  component: () => (
+    <FeatureGate title="Hardware catalogue" features={['hardware']}>
+      <HardwarePage />
+    </FeatureGate>
+  ),
+});
+
+const companySettingsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/company',
+  component: () => (
+    <FeatureGate title="Company profile" features={['users']}>
+      <CompanyPage />
+    </FeatureGate>
+  ),
+});
+
 export const routeTree = rootRoute.addChildren([
   designRoute,
   appRoute.addChildren([
@@ -284,6 +339,11 @@ export const routeTree = rootRoute.addChildren([
     sheetSyncRoute,
     newSheetSourceRoute,
     sheetSourceRoute,
+    usersSettingsRoute,
+    rolesSettingsRoute,
+    optionListsSettingsRoute,
+    hardwareSettingsRoute,
+    companySettingsRoute,
   ]),
 ]);
 

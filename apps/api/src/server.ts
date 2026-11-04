@@ -1,5 +1,5 @@
 import { createApp } from './app.ts';
-import { createFirebaseVerifier } from './auth/firebase.ts';
+import { createFirebaseAuth } from './auth/firebase.ts';
 import { loadConfig, type Config } from './config.ts';
 import { createDb } from './db/client.ts';
 import { createBoss, jobQueue, type JobQueue } from './jobs/queue.ts';
@@ -55,11 +55,19 @@ try {
   );
 }
 
+const firebase = createFirebaseAuth(config);
+if (!firebase.sessions) {
+  logger.warn(
+    'FIREBASE_SERVICE_ACCOUNT_PATH is not set — deactivating a user takes effect on their next request instead of revoking sessions immediately.',
+  );
+}
+
 const app = createApp({
   config,
   db,
   logger,
-  verifyIdToken: createFirebaseVerifier(config),
+  verifyIdToken: firebase.verifyIdToken,
+  sessions: firebase.sessions,
   storage,
   jobs,
   sheets,

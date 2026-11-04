@@ -331,7 +331,7 @@ export function ImportsPage() {
       <SettingsBackLink />
       <PageHeader
         title="Import"
-        description="Bring leads or contacts in from a spreadsheet: map the columns, preview every row, then import."
+        description="Bring leads, contacts or hardware catalogue items in from a spreadsheet: map the columns, preview every row, then import."
       />
       {setup.isPending ? (
         <Skeleton className="h-48" />
@@ -339,7 +339,8 @@ export function ImportsPage() {
         <Alert tone="danger">{errorMessage(setup.error)}</Alert>
       ) : setup.data.targets.length === 0 ? (
         <Alert tone="info">
-          Importing needs permission to create and edit leads or contacts. Ask an admin.
+          Importing needs permission to create and edit leads, contacts or the hardware catalogue.
+          Ask an admin.
         </Alert>
       ) : (
         <NewImport setup={setup.data} />

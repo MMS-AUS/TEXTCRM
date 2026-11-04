@@ -2,6 +2,7 @@ import {
   IMPORT_ACTIONS,
   IMPORT_FIELDS,
   IMPORT_ROWS_PAGE_SIZE,
+  isHardwareTarget,
   mappingProblems,
   type ImportAction,
   type ImportTarget,
@@ -159,6 +160,12 @@ function MappingStep({ job }: { job: Job }) {
 // ── Rows: the preview, and afterwards the result ────────────────────────
 
 function personOf(data: Record<string, string>) {
+  if (data.manufacturer ?? data.model) {
+    return {
+      name: [data.manufacturer, data.model].filter(Boolean).join(' '),
+      reach: data.sizeW ?? data.sizeKw ?? data.usableCapacityKwh ?? '',
+    };
+  }
   const name = data.firstName
     ? [data.firstName, data.lastName].filter(Boolean).join(' ')
     : (data.fullName ?? data.lastName ?? '');
@@ -166,6 +173,7 @@ function personOf(data: Record<string, string>) {
 }
 
 function RecordLink({ target, id }: { target: ImportTarget; id: string }) {
+  if (target !== 'leads' && target !== 'contacts') return null; // catalogue items have no page
   return target === 'leads' ? (
     <Link to="/leads/$leadId" params={{ leadId: id }} className="text-sm hover:underline">
       Open
@@ -220,7 +228,9 @@ function RowsTable({ job, done }: { job: Job; done: boolean }) {
               <tr>
                 <TableHeaderCell end>Row</TableHeaderCell>
                 <TableHeaderCell>Result</TableHeaderCell>
-                <TableHeaderCell>Customer</TableHeaderCell>
+                <TableHeaderCell>
+                  {isHardwareTarget(job.target) ? 'Item' : 'Customer'}
+                </TableHeaderCell>
                 <TableHeaderCell>Details</TableHeaderCell>
                 <TableHeaderCell />
               </tr>
@@ -354,9 +364,9 @@ function ConfirmStep({ job }: { job: Job }) {
       <CardHeader>
         <CardTitle>2 · Check and import</CardTitle>
         <CardDescription>
-          Nothing has changed in the CRM yet. Skipped rows are customers already in the CRM (or
-          repeated in this sheet); rows with errors are left out — download them, fix them and
-          import them again.
+          Nothing has changed in the CRM yet. Skipped rows are already in the CRM (or repeated in
+          this sheet); rows with errors are left out — download them, fix them and import them
+          again.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

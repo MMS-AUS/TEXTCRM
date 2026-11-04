@@ -25,7 +25,7 @@ export const importJobs = pgTable(
   'import_jobs',
   {
     id: id(),
-    /** 'leads' | 'contacts'. */
+    /** 'leads' | 'contacts' | 'panels' | 'inverters' | 'batteries' (hardware catalog). */
     target: text().notNull(),
     /** 'upload' (CSV/XLSX in storage) | 'google_sheet'. */
     sourceType: text().notNull(),
@@ -53,7 +53,10 @@ export const importJobs = pgTable(
   },
   (t) => [
     index('import_jobs_created_at_idx').on(t.createdAt),
-    check('import_jobs_target_valid', sql`${t.target} in ('leads', 'contacts')`),
+    check(
+      'import_jobs_target_valid',
+      sql`${t.target} in ('leads', 'contacts', 'panels', 'inverters', 'batteries')`,
+    ),
     check('import_jobs_source_valid', sql`${t.sourceType} in ('upload', 'google_sheet')`),
   ],
 );

@@ -7,7 +7,7 @@ import { rateLimit } from 'express-rate-limit';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import type { HealthResponse } from '@mms/shared';
-import type { VerifyIdToken } from './auth/types.ts';
+import type { SessionRevoker, VerifyIdToken } from './auth/types.ts';
 import type { Config } from './config.ts';
 import type { Db } from './db/client.ts';
 import type { Logger } from './logger.ts';
@@ -28,6 +28,8 @@ export interface AppDeps {
   jobs: JobQueue | null;
   /** Null when the Google service account isn't configured. */
   sheets: SheetsReader | null;
+  /** Null without the Firebase service account. */
+  sessions?: SessionRevoker | null;
 }
 
 const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;

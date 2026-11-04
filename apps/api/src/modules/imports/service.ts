@@ -1,9 +1,22 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
-import { IMPORT_FIELDS, mapRow, type ImportAction, type ImportTarget } from '@mms/shared';
+import {
+  IMPORT_FIELDS,
+  isHardwareTarget,
+  mapRow,
+  type ImportAction,
+  type ImportTarget,
+} from '@mms/shared';
 import type { Db, Tx } from '../../db/client.ts';
 import { importJobRows, importJobs } from '../../db/schema/index.ts';
 import type { Logger } from '../../logger.ts';
 import type { Actor } from '../audit.ts';
+import {
+  applyHardware,
+  hardwareRowKey,
+  planHardware,
+  toHardwareRecord,
+  type HardwareTarget,
+} from './hardware-records.ts';
 import type { Table } from './parse.ts';
 import {
   applyContact,
@@ -55,6 +68,10 @@ const withNotes = (message: string | null, notes: string[]) =>
 
 /** The key a valid row is de-duplicated on within the file, or null for an invalid row. */
 function rowKey(target: ImportTarget, data: Record<string, string>, lookups: Lookups) {
+  if (isHardwareTarget(target)) {
+    const result = toHardwareRecord(target as HardwareTarget, data);
+    return result.ok ? hardwareRowKey(result.record) : null;
+  }
   if (target === 'leads') {
     const result = toLeadRecord(data, lookups);
     return result.ok ? leadRowKey(result.record) : null;
@@ -173,6 +190,32 @@ async function decideContact(
   };
 }
 
+async function decideHardware(
+  db: Db | Tx,
+  target: HardwareTarget,
+  data: Record<string, string>,
+  seen: Seen,
+  rowNumber: number,
+): Promise<Decision> {
+  const result = toHardwareRecord(target, data);
+  if (!result.ok) return { action: 'error', message: result.message };
+  const record = result.record;
+  const repeat = sameAsEarlier(hardwareRowKey(record), seen, rowNumber);
+  if (repeat)
+    return { ...repeat, message: (repeat.message ?? '').replace('Same customer', 'Same model') };
+  const plan = await planHardware(db, record);
+  if (plan.action === 'skip') return { action: 'skip', message: plan.message, recordId: plan.id };
+  const apply = (tx: Tx, origin: Origin) => applyHardware(tx, record, plan, origin);
+  if (plan.action === 'create') return { action: 'create', message: null, recordId: null, apply };
+  const fields = Object.keys(plan.changes.after).map((key) => fieldLabel(target, key));
+  return {
+    action: 'update',
+    message: `Already in the catalogue — updates ${fields.join(', ')}.`,
+    recordId: plan.id,
+    apply,
+  };
+}
+
 export function decideRow(
   db: Db | Tx,
   target: ImportTarget,
@@ -181,6 +224,9 @@ export function decideRow(
   seen: Seen,
   rowNumber: number,
 ): Promise<Decision> {
+  if (isHardwareTarget(target)) {
+    return decideHardware(db, target as HardwareTarget, data, seen, rowNumber);
+  }
   return target === 'leads'
     ? decideLead(db, data, lookups, seen, rowNumber)
     : decideContact(db, data, lookups, seen, rowNumber);

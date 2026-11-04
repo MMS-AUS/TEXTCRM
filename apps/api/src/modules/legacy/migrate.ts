@@ -231,6 +231,8 @@ async function run(tx: Tx, user: AuthUser, data: LegacyData, options: MigrationO
     jobs: null,
     sheets: null,
     syncIntervalMinutes: 5,
+    sessions: null,
+    allowedEmailDomain: user.email.split('@')[1] ?? '',
   });
   const lookups = await loadLookups(tx);
 

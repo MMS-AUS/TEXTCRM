@@ -1,15 +1,15 @@
 import { cert, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import type { Config } from '../config.ts';
-import type { VerifyIdToken } from './types.ts';
+import type { SessionRevoker, VerifyIdToken } from './types.ts';
 
 /**
  * Verifying ID tokens only needs the project ID (Google's public keys are fetched automatically).
  * With a service account we also check for revoked sessions on every request.
  */
-export function createFirebaseVerifier(
+export function createFirebaseAuth(
   config: Pick<Config, 'FIREBASE_PROJECT_ID' | 'FIREBASE_SERVICE_ACCOUNT_PATH'>,
-): VerifyIdToken {
+): { verifyIdToken: VerifyIdToken; sessions: SessionRevoker | null } {
   const serviceAccountPath = config.FIREBASE_SERVICE_ACCOUNT_PATH;
   const app = initializeApp({
     projectId: config.FIREBASE_PROJECT_ID,
@@ -18,7 +18,7 @@ export function createFirebaseVerifier(
   const auth = getAuth(app);
   const checkRevoked = serviceAccountPath !== undefined;
 
-  return async (idToken) => {
+  const verifyIdToken: VerifyIdToken = async (idToken) => {
     const decoded = await auth.verifyIdToken(idToken, checkRevoked);
     return {
       uid: decoded.uid,
@@ -26,5 +26,12 @@ export function createFirebaseVerifier(
       emailVerified: decoded.email_verified === true,
       signInProvider: decoded.firebase.sign_in_provider,
     };
+  };
+
+  return {
+    verifyIdToken,
+    // Revoking needs the service account; without it, deactivation still takes effect on the
+    // user's next request (authenticate checks is_active every time).
+    sessions: checkRevoked ? { revoke: (uid: string) => auth.revokeRefreshTokens(uid) } : null,
   };
 }

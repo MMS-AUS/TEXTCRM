@@ -3,7 +3,7 @@
 /// <reference types="pino-http" />
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import { authenticate } from '../auth/authenticate.ts';
-import type { AuthState, VerifyIdToken } from '../auth/types.ts';
+import type { AuthState, SessionRevoker, VerifyIdToken } from '../auth/types.ts';
 import { findUserForAuth, type RequestMeta } from '../auth/users-repo.ts';
 import type { Config } from '../config.ts';
 import type { Db } from '../db/client.ts';
@@ -25,6 +25,10 @@ export interface Context {
   sheets: SheetsReader | null;
   /** How often the live sheet sync runs (SHEETS_SYNC_INTERVAL_MINUTES). */
   syncIntervalMinutes: number;
+  /** Revokes Firebase sessions on deactivation; null without the service account. */
+  sessions: SessionRevoker | null;
+  /** Only this Google Workspace domain can be invited (ALLOWED_EMAIL_DOMAIN). */
+  allowedEmailDomain: string;
 }
 
 export interface ContextDeps {
@@ -35,6 +39,7 @@ export interface ContextDeps {
   storage: Storage | null;
   jobs: JobQueue | null;
   sheets: SheetsReader | null;
+  sessions?: SessionRevoker | null;
 }
 
 export function createContextFactory(deps: ContextDeps) {
@@ -49,6 +54,8 @@ export function createContextFactory(deps: ContextDeps) {
     storage: deps.storage,
     jobs: deps.jobs,
     sheets: deps.sheets,
+    sessions: deps.sessions ?? null,
+    allowedEmailDomain: deps.config.ALLOWED_EMAIL_DOMAIN,
     syncIntervalMinutes: deps.config.SHEETS_SYNC_INTERVAL_MINUTES ?? 5,
     log: req.log,
     auth: await authenticate(req.headers.authorization, authDeps),

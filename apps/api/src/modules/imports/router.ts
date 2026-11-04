@@ -35,11 +35,15 @@ import { errorReportCsv, previewImport } from './service.ts';
 
 type ImportJob = typeof importJobs.$inferSelect;
 
+/** The permission an import target needs: the hardware targets share `hardware`. */
+const featureOf = (target: ImportTarget) =>
+  target === 'leads' || target === 'contacts' ? target : 'hardware';
+
 /** Importing creates and updates records, so it needs both on the target. */
 function canImport(user: AuthUser, target: ImportTarget) {
   return (
-    hasPermission(user.permissions, target, 'create') &&
-    hasPermission(user.permissions, target, 'edit')
+    hasPermission(user.permissions, featureOf(target), 'create') &&
+    hasPermission(user.permissions, featureOf(target), 'edit')
   );
 }
 

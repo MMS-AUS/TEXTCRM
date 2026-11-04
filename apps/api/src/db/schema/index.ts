@@ -9,3 +9,4 @@ export * from './users.ts';
 export * from './activities.ts';
 export * from './files.ts';
 export * from './imports.ts';
+export * from './company.ts';

@@ -3,7 +3,11 @@ import { z } from 'zod';
 // Spreadsheet imports (Step 3.2) and the live leads sync (Step 3.3): which CRM fields a column
 // can fill, how headers are matched automatically, and how cell text is cleaned up.
 
-export const IMPORT_TARGETS = ['leads', 'contacts'] as const;
+export const IMPORT_TARGETS = ['leads', 'contacts', 'panels', 'inverters', 'batteries'] as const;
+/** Hardware catalogue targets (Step 2.10) — import with preview and de-duplication. */
+export const HARDWARE_IMPORT_TARGETS = ['panels', 'inverters', 'batteries'] as const;
+export const isHardwareTarget = (target: string) =>
+  (HARDWARE_IMPORT_TARGETS as readonly string[]).includes(target);
 export type ImportTarget = (typeof IMPORT_TARGETS)[number];
 
 export const MAX_IMPORT_ROWS = 5000;
@@ -93,9 +97,43 @@ export const CONTACT_IMPORT_FIELDS: readonly ImportField[] = [
   field('notes', 'Notes', ['comments']),
 ];
 
+const HARDWARE_BASE_FIELDS = [
+  field('manufacturer', 'Manufacturer', ['brand', 'make', 'maker']),
+  field('model', 'Model', ['model number', 'model no', 'product']),
+  field('series', 'Series', ['range', 'family']),
+];
+
 export const IMPORT_FIELDS: Record<ImportTarget, readonly ImportField[]> = {
   leads: LEAD_IMPORT_FIELDS,
   contacts: CONTACT_IMPORT_FIELDS,
+  panels: [
+    ...HARDWARE_BASE_FIELDS,
+    field(
+      'sizeW',
+      'Size W',
+      ['size', 'watts', 'power', 'panel size w', 'size (w)'],
+      'Panel rating in watts',
+    ),
+  ],
+  inverters: [
+    ...HARDWARE_BASE_FIELDS,
+    field(
+      'sizeKw',
+      'Size kW',
+      ['size', 'kw', 'rated power', 'size (kw)', 'ac power'],
+      'Rated output in kW',
+    ),
+  ],
+  batteries: [
+    ...HARDWARE_BASE_FIELDS,
+    field(
+      'usableCapacityKwh',
+      'Usable capacity kWh',
+      ['usable capacity', 'capacity', 'kwh', 'capacity (kwh)'],
+      'Usable energy in kWh',
+    ),
+    field('sizeLabel', 'Size label', ['size'], 'Free text, e.g. 9.6kWh System'),
+  ],
 };
 
 /**
@@ -136,11 +174,20 @@ export function mappingProblems(
   for (const key of Object.keys(mapping)) {
     if (!known.has(key)) problems.push(`"${key}" is not a field you can import.`);
   }
-  if (!mapping.firstName && !mapping.fullName) {
-    problems.push('Map a First Name or Full Name column.');
-  }
-  if (!mapping.mobile && !mapping.email) {
-    problems.push('Map a mobile or an email column so customers can be reached.');
+  if (isHardwareTarget(target)) {
+    const size = { panels: 'sizeW', inverters: 'sizeKw', batteries: 'usableCapacityKwh' }[
+      target as (typeof HARDWARE_IMPORT_TARGETS)[number]
+    ];
+    if (!mapping.manufacturer || !mapping.model)
+      problems.push('Map the Manufacturer and Model columns.');
+    if (!mapping[size]) problems.push('Map the size column.');
+  } else {
+    if (!mapping.firstName && !mapping.fullName) {
+      problems.push('Map a First Name or Full Name column.');
+    }
+    if (!mapping.mobile && !mapping.email) {
+      problems.push('Map a mobile or an email column so customers can be reached.');
+    }
   }
   if (options.requireLeadId && !mapping.sheetLeadId) {
     problems.push('Map the Lead ID column — the live sync needs it to recognise each row.');
