@@ -20,6 +20,7 @@ import {
   leadSystemRequirements,
   projects,
 } from '../../db/schema/index.ts';
+import { createIntegrations } from '../../integrations/service.ts';
 import { appRouter } from '../../trpc/router.ts';
 import { createCallerFactory } from '../../trpc/trpc.ts';
 import { logSystemActivity } from '../activities/service.ts';
@@ -233,6 +234,7 @@ async function run(tx: Tx, user: AuthUser, data: LegacyData, options: MigrationO
     syncIntervalMinutes: 5,
     sessions: null,
     allowedEmailDomain: user.email.split('@')[1] ?? '',
+    integrations: createIntegrations({ APP_URL: '' }),
   });
   const lookups = await loadLookups(tx);
 

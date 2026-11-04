@@ -9,6 +9,7 @@ import type { Config } from '../config.ts';
 import type { Db } from '../db/client.ts';
 import type { Logger } from '../logger.ts';
 import type { JobQueue } from '../jobs/queue.ts';
+import type { Integrations } from '../integrations/service.ts';
 import type { SheetsReader } from '../modules/imports/google-sheets.ts';
 import type { Storage } from '../storage/storage.ts';
 
@@ -29,6 +30,8 @@ export interface Context {
   sessions: SessionRevoker | null;
   /** Only this Google Workspace domain can be invited (ALLOWED_EMAIL_DOMAIN). */
   allowedEmailDomain: string;
+  /** Gmail, Xero, MessageMedia clients and their settings (Phase 5). */
+  integrations: Integrations;
 }
 
 export interface ContextDeps {
@@ -40,6 +43,7 @@ export interface ContextDeps {
   jobs: JobQueue | null;
   sheets: SheetsReader | null;
   sessions?: SessionRevoker | null;
+  integrations: Integrations;
 }
 
 export function createContextFactory(deps: ContextDeps) {
@@ -56,6 +60,7 @@ export function createContextFactory(deps: ContextDeps) {
     sheets: deps.sheets,
     sessions: deps.sessions ?? null,
     allowedEmailDomain: deps.config.ALLOWED_EMAIL_DOMAIN,
+    integrations: deps.integrations,
     syncIntervalMinutes: deps.config.SHEETS_SYNC_INTERVAL_MINUTES ?? 5,
     log: req.log,
     auth: await authenticate(req.headers.authorization, authDeps),

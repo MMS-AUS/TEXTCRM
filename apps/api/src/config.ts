@@ -34,6 +34,21 @@ const configSchema = z.object({
     (v) => (v === '' ? undefined : v),
     z.coerce.number().int().min(1).max(60).default(5),
   ),
+  /**
+   * Integrations (Phase 5). All optional: a provider without its settings reports
+   * "not configured" instead of failing. TOKEN_ENCRYPTION_KEY (32 random bytes, base64)
+   * encrypts every stored token and API secret; without a valid one nothing can connect.
+   */
+  TOKEN_ENCRYPTION_KEY: optionalString,
+  GOOGLE_OAUTH_CLIENT_ID: optionalString,
+  GOOGLE_OAUTH_CLIENT_SECRET: optionalString,
+  GOOGLE_OAUTH_REDIRECT_URI: optionalString,
+  XERO_CLIENT_ID: optionalString,
+  XERO_CLIENT_SECRET: optionalString,
+  XERO_REDIRECT_URI: optionalString,
+  MESSAGEMEDIA_API_KEY: optionalString,
+  MESSAGEMEDIA_API_SECRET: optionalString,
+  MESSAGEMEDIA_DEFAULT_SENDER: optionalString,
   /** true for local S3 servers (bucket in the path); false for R2. */
   S3_FORCE_PATH_STYLE: z
     .enum(['true', 'false', ''])

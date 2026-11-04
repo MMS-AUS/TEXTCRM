@@ -10,3 +10,4 @@ export * from './activities.ts';
 export * from './files.ts';
 export * from './imports.ts';
 export * from './company.ts';
+export * from './integrations.ts';

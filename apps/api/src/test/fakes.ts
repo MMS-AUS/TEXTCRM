@@ -2,6 +2,7 @@ import { pino } from 'pino';
 import { emptyPermissionMatrix, type PermissionMatrix } from '@mms/shared';
 import type { AuthState, AuthUser, VerifiedToken } from '../auth/types.ts';
 import { createDb } from '../db/client.ts';
+import { createIntegrations } from '../integrations/service.ts';
 import type { Context } from '../trpc/context.ts';
 
 /** A Db that is never connected: pg connects lazily, so this only fails if a query actually runs. */
@@ -48,6 +49,7 @@ export function fakeContext(auth: AuthState, overrides: Partial<Context> = {}): 
     syncIntervalMinutes: 5,
     sessions: null,
     allowedEmailDomain: 'makemysolar.com.au',
+    integrations: createIntegrations({ APP_URL: 'http://localhost:5173' }),
     log: silentLogger,
     auth,
     meta: { requestId: 'test-request', ipAddress: '127.0.0.1', userAgent: 'vitest' },

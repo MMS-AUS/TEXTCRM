@@ -4,6 +4,7 @@ import { loadConfig, type Config } from './config.ts';
 import { createDb } from './db/client.ts';
 import { createBoss, jobQueue, type JobQueue } from './jobs/queue.ts';
 import { createLogger } from './logger.ts';
+import { createIntegrations, setupProblem } from './integrations/service.ts';
 import { createSheetsReader, type SheetsReader } from './modules/imports/google-sheets.ts';
 import { createStorage, prepareDevBucket } from './storage/storage.ts';
 
@@ -62,12 +63,21 @@ if (!firebase.sessions) {
   );
 }
 
+const integrations = createIntegrations(config);
+for (const provider of ['gmail', 'xero', 'messagemedia'] as const) {
+  const problem = setupProblem(integrations, provider);
+  if (problem && (provider !== 'messagemedia' || integrations.messageMediaEnv)) {
+    logger.warn({ provider }, problem);
+  }
+}
+
 const app = createApp({
   config,
   db,
   logger,
   verifyIdToken: firebase.verifyIdToken,
   sessions: firebase.sessions,
+  integrations,
   storage,
   jobs,
   sheets,

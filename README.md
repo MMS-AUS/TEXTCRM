@@ -102,6 +102,21 @@ unique `Lead ID`. The sheet creates leads; once anyone changes a lead in the CRM
 changes it again. The CRM never writes to the sheet. Every run, with its row errors, is listed
 in Settings.
 
+## Integrations (Gmail, Xero, MessageMedia)
+
+Connections live in `integration_connections`, with every token and API secret encrypted
+(AES-256-GCM) using `TOKEN_ENCRYPTION_KEY` — 32 random bytes in base64:
+`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`. Changing or
+losing that key means reconnecting every integration.
+
+- **Gmail** (each person's own mailbox) and **Xero** (the business organisation) connect with
+  OAuth. Their callbacks are served at the path of `GOOGLE_OAUTH_REDIRECT_URI` /
+  `XERO_REDIRECT_URI`; register exactly those URIs with Google and Xero.
+- **MessageMedia** uses an API key and secret, saved in the CRM after a check, or taken from
+  `MESSAGEMEDIA_API_KEY` / `MESSAGEMEDIA_API_SECRET`.
+- The tRPC `integrations` router has `status`, `connect`, `test` (a real read-only call),
+  `disconnect`, `saveMessageMediaCredentials` and `selectXeroTenant`.
+
 ## Database
 
 - Local Postgres 18 in Docker, bound to `127.0.0.1:5432`, user/password/db `crm`/`crm`/`crm`.

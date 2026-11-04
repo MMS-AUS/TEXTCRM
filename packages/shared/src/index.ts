@@ -13,3 +13,4 @@ export * from './imports.ts';
 export * from './sheet-sync.ts';
 export * from './tickets.ts';
 export * from './admin.ts';
+export * from './integrations.ts';

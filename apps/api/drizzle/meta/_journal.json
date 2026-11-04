@@ -36,6 +36,13 @@
       "when": 1793788770151,
       "tag": "0004_tickets_dashboard_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793799942425,
+      "tag": "0005_integrations",
+      "breakpoints": true
     }
   ]
 }

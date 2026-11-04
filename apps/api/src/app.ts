@@ -12,6 +12,8 @@ import type { Config } from './config.ts';
 import type { Db } from './db/client.ts';
 import type { Logger } from './logger.ts';
 import type { JobQueue } from './jobs/queue.ts';
+import { oauthCallbacks } from './integrations/routes.ts';
+import { createIntegrations, type Integrations } from './integrations/service.ts';
 import type { SheetsReader } from './modules/imports/google-sheets.ts';
 import type { Storage } from './storage/storage.ts';
 import { createContextFactory } from './trpc/context.ts';
@@ -30,11 +32,17 @@ export interface AppDeps {
   sheets: SheetsReader | null;
   /** Null without the Firebase service account. */
   sessions?: SessionRevoker | null;
+  /** Defaults to nothing configured (tests). */
+  integrations?: Integrations;
 }
 
 const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;
 
-export function createApp(deps: AppDeps) {
+export function createApp(appDeps: AppDeps) {
+  const deps = {
+    ...appDeps,
+    integrations: appDeps.integrations ?? createIntegrations({ APP_URL: appDeps.config.APP_URL }),
+  };
   const app = express();
   app.disable('x-powered-by');
 
@@ -77,6 +85,10 @@ export function createApp(deps: AppDeps) {
       },
     }),
   );
+
+  // OAuth callbacks for Gmail and Xero (Phase 5), at the paths in the redirect URIs.
+  app.use(/^\/api\/integrations\/.*\/callback/, limiter(30));
+  app.use(oauthCallbacks({ db: deps.db, integrations: deps.integrations, logger: deps.logger }));
 
   // Reserved for third-party callbacks (Phase 5). Each route there must verify its signature/secret.
   app.use('/webhooks', limiter(300), express.Router());
