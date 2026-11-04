@@ -45,6 +45,8 @@ export const tickets = pgTable(
     index('tickets_priority_idx').on(t.priority),
     index('tickets_resolution_status_idx').on(t.resolutionStatus),
     index('tickets_assigned_user_idx').on(t.assignedUserId),
+    // Open tickets by priority and age (list default, dashboard).
+    index('tickets_open_idx').on(t.closedAt, t.priority, t.createdAt),
   ],
 );
 

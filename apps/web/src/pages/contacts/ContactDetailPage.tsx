@@ -28,6 +28,7 @@ import { HistoryList } from '../../components/HistoryList.tsx';
 import { errorMessage } from '../../lib/errors.ts';
 import { formatDate, fullName } from '../../lib/format.ts';
 import { useCan } from '../../lib/hooks.ts';
+import { RecordTickets } from '../tickets/RecordTickets.tsx';
 import { trpcErrorCode, useTRPC, type RouterOutputs } from '../../lib/trpc.ts';
 import {
   Alert,
@@ -487,6 +488,12 @@ function ContactView({ contact }: { contact: Contact }) {
                     <span className="text-xs text-fg-subtle tabular-nums">{tab.count}</span>
                   </TabsTrigger>
                 ))}
+                {can('tickets', 'view') && (
+                  <TabsTrigger value="tickets">
+                    <LifeBuoy />
+                    Tickets
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="files">
                   <Paperclip />
                   Files
@@ -504,6 +511,11 @@ function ContactView({ contact }: { contact: Contact }) {
               <TabsContent value="activity">
                 <ActivityTimeline entityType="contact" entityId={contact.id} readOnly={archived} />
               </TabsContent>
+              {can('tickets', 'view') && (
+                <TabsContent value="tickets">
+                  <RecordTickets contactId={contact.id} contactName={fullName(contact)} />
+                </TabsContent>
+              )}
               <TabsContent value="files">
                 <FilesPanel entityType="contact" entityId={contact.id} readOnly={archived} />
               </TabsContent>

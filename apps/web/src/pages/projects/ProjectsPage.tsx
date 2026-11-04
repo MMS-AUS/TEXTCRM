@@ -1,9 +1,10 @@
 import { AU_STATES, formatAud, PROJECT_STAGES, PROJECT_STATUSES } from '@mms/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { functionalUpdate, Link, useNavigate, useSearch } from '@tanstack/react-router';
-import { FolderKanban, LayoutGrid, SlidersHorizontal, Table2, X } from 'lucide-react';
+import { FolderKanban, SlidersHorizontal, X } from 'lucide-react';
 import { useMemo } from 'react';
 import { PageHeader } from '../../components/PageHeader.tsx';
+import { ViewToggle } from '../../components/ViewToggle.tsx';
 import { SavedViewsMenu } from '../../components/SavedViewsMenu.tsx';
 import { SearchBox } from '../../components/SearchBox.tsx';
 import { errorMessage } from '../../lib/errors.ts';
@@ -15,13 +16,11 @@ import {
   Avatar,
   Badge,
   Button,
-  cn,
   createDataTableColumns,
   DataTable,
   DateInput,
   EmptyState,
   Field,
-  focusRing,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -139,46 +138,6 @@ const columns = col.columns([
     ),
   }),
 ]);
-
-function ViewToggle({
-  view,
-  onChange,
-}: {
-  view: 'board' | 'table';
-  onChange: (view: 'board' | 'table') => void;
-}) {
-  return (
-    <div
-      role="group"
-      aria-label="View"
-      className="inline-flex rounded-md border border-line bg-surface-2 p-0.5"
-    >
-      {(
-        [
-          ['board', 'Board', LayoutGrid],
-          ['table', 'Table', Table2],
-        ] as const
-      ).map(([value, label, Icon]) => (
-        <button
-          key={value}
-          type="button"
-          aria-pressed={view === value}
-          onClick={() => {
-            onChange(value);
-          }}
-          className={cn(
-            'flex h-7 cursor-pointer items-center gap-1.5 rounded-sm px-2.5 text-sm text-fg-muted transition-colors hover:text-fg',
-            'aria-pressed:bg-surface aria-pressed:text-fg aria-pressed:shadow-xs',
-            focusRing,
-          )}
-        >
-          <Icon className="size-4" />
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export function ProjectsPage() {
   const trpc = useTRPC();

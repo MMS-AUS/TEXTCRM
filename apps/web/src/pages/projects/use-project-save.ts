@@ -4,7 +4,7 @@ import { errorMessage } from '../../lib/errors.ts';
 import { useTRPC } from '../../lib/trpc.ts';
 import { toast } from '../../ui/index.ts';
 
-/** Save → refresh the project and its timeline → toast, or keep the API's error for the dialog. */
+/** Save → refresh the record (project or ticket) and its timeline → toast, or keep the API's error. */
 export function useProjectSave(message: string, onDone: () => void) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -15,6 +15,7 @@ export function useProjectSave(message: string, onDone: () => void) {
       await action();
       await Promise.all([
         queryClient.invalidateQueries(trpc.projects.pathFilter()),
+        queryClient.invalidateQueries(trpc.tickets.pathFilter()),
         queryClient.invalidateQueries(trpc.activities.pathFilter()),
       ]);
       toast({ title: message, tone: 'success' });

@@ -21,12 +21,15 @@ import {
   contactsSearchSchema,
   leadsSearchSchema,
   projectsSearchSchema,
+  ticketsSearchSchema,
 } from '../pages/list-search.ts';
-import { FeatureGate, PlaceholderPage } from '../pages/PlaceholderPage.tsx';
+import { FeatureGate } from '../pages/PlaceholderPage.tsx';
 import { ProjectDetailPage } from '../pages/projects/ProjectDetailPage.tsx';
 import { ProjectsPage } from '../pages/projects/ProjectsPage.tsx';
 import { ImportPage } from '../pages/settings/imports/ImportPage.tsx';
 import { ImportsPage } from '../pages/settings/imports/ImportsPage.tsx';
+import { TicketDetailPage } from '../pages/tickets/TicketDetailPage.tsx';
+import { TicketsPage } from '../pages/tickets/TicketsPage.tsx';
 import { JobsPage } from '../pages/settings/JobsPage.tsx';
 import {
   NewSheetSourcePage,
@@ -171,13 +174,21 @@ const projectDetailRoute = createRoute({
 const ticketsRoute = createRoute({
   getParentRoute: () => appRoute,
   path: '/tickets',
+  validateSearch: ticketsSearchSchema,
   component: () => (
-    <PlaceholderPage
-      title="Tickets"
-      description="After-sales service and warranty claims."
-      step="Step 2.8"
-      features={['tickets']}
-    />
+    <FeatureGate title="Tickets" features={['tickets']}>
+      <TicketsPage />
+    </FeatureGate>
+  ),
+});
+
+const ticketDetailRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/tickets/$ticketId',
+  component: () => (
+    <FeatureGate title="Tickets" features={['tickets']}>
+      <TicketDetailPage />
+    </FeatureGate>
   ),
 });
 
@@ -265,6 +276,7 @@ export const routeTree = rootRoute.addChildren([
     projectsRoute,
     projectDetailRoute,
     ticketsRoute,
+    ticketDetailRoute,
     settingsRoute,
     jobsRoute,
     importsRoute,

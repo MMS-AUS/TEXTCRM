@@ -10,6 +10,7 @@ import { leadsRouter } from '../modules/leads/router.ts';
 import { projectsRouter } from '../modules/projects/router.ts';
 import { sheetSyncRouter } from '../modules/sheet-sync/router.ts';
 import { savedViewsRouter } from '../modules/saved-views/router.ts';
+import { ticketsRouter } from '../modules/tickets/router.ts';
 import { usersRouter } from '../modules/users/router.ts';
 import { authRouter } from './routers/auth.ts';
 import { healthRouter } from './routers/health.ts';
@@ -25,6 +26,7 @@ export const appRouter = router({
   companies: companiesRouter,
   leads: leadsRouter,
   projects: projectsRouter,
+  tickets: ticketsRouter,
   activities: activitiesRouter,
   savedViews: savedViewsRouter,
   hardware: hardwareRouter,

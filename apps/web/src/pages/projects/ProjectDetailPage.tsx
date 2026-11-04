@@ -6,6 +6,7 @@ import {
   ClipboardList,
   FolderKanban,
   History,
+  LifeBuoy,
   Mail,
   Paperclip,
   Phone,
@@ -33,6 +34,7 @@ import {
   TabsTrigger,
   toast,
 } from '../../ui/index.ts';
+import { RecordTickets } from '../tickets/RecordTickets.tsx';
 import { PaymentsCard, SiteCard, SystemDesignCard } from './ProjectSections.tsx';
 import {
   EbVerificationCard,
@@ -178,6 +180,7 @@ function ProjectView({ project }: { project: Project }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const can = useCan();
+  const canViewTickets = can('tickets', 'view');
   const users = useUsers();
   const setStage = useMutation(trpc.projects.setStage.mutationOptions());
   const setStatus = useMutation(trpc.projects.setStatus.mutationOptions());
@@ -360,6 +363,12 @@ function ProjectView({ project }: { project: Project }) {
               <StickyNote />
               Activity
             </TabsTrigger>
+            {canViewTickets && (
+              <TabsTrigger value="tickets">
+                <LifeBuoy />
+                Tickets
+              </TabsTrigger>
+            )}
             <TabsTrigger value="files">
               <Paperclip />
               Files
@@ -388,6 +397,19 @@ function ProjectView({ project }: { project: Project }) {
               </CardContent>
             </Card>
           </TabsContent>
+          {canViewTickets && (
+            <TabsContent value="tickets">
+              <Card>
+                <CardContent>
+                  <RecordTickets
+                    contactId={project.contactId}
+                    contactName={fullName(project.contact)}
+                    projectId={project.id}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
           <TabsContent value="files">
             <Card>
               <CardContent className="flex flex-col gap-6">

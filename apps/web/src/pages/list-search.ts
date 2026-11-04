@@ -7,6 +7,9 @@ import {
   PROJECT_SORTS,
   PROJECT_STAGES,
   PROJECT_STATUSES,
+  TICKET_AGES,
+  TICKET_PRIORITIES,
+  TICKET_SORTS,
 } from '@mms/shared';
 import { z } from 'zod';
 
@@ -82,5 +85,23 @@ export const projectsSearchSchema = z.object({
   desc: common.desc,
 });
 export type ProjectsSearch = z.output<typeof projectsSearchSchema>;
+
+export const ticketsSearchSchema = z.object({
+  /** Table (default) or board (open tickets by resolution status). */
+  view: z.enum(['board', 'table']).optional().catch(undefined),
+  q: common.q,
+  /** Absent means open tickets. */
+  state: z.enum(['closed', 'all']).optional().catch(undefined),
+  status: common.type,
+  priority: z.enum(TICKET_PRIORITIES).optional().catch(undefined),
+  category: common.type,
+  assigned: ownerFilterSchema.optional().catch(undefined),
+  age: z.enum(TICKET_AGES).optional().catch(undefined),
+  page: common.page,
+  size: common.size,
+  sort: z.enum(TICKET_SORTS).optional().catch(undefined),
+  desc: common.desc,
+});
+export type TicketsSearch = z.output<typeof ticketsSearchSchema>;
 
 export { PAGE_SIZES };

@@ -28,7 +28,7 @@ export function SavedViewsMenu({
   current,
   onApply,
 }: {
-  page: 'leads' | 'projects';
+  page: 'leads' | 'projects' | 'tickets';
   /** The list's current URL search params, saved as-is. */
   current: Record<string, unknown>;
   onApply: (search: Record<string, unknown>) => void;
