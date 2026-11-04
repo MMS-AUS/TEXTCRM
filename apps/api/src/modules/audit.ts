@@ -5,6 +5,9 @@ import { auditLog, users } from '../db/schema/index.ts';
 
 export type Actor = { userId: string; meta: RequestMeta };
 
+/** A change made by the CRM itself rather than a person, e.g. the live sheet sync. */
+export type SystemActor = { system: 'sheet_sync' | 'system' };
+
 type Values = Record<string, unknown>;
 
 function same(a: unknown, b: unknown): boolean {
@@ -25,7 +28,7 @@ export function diff(before: Values, after: Values): { before: Values; after: Va
 /** Append one audit row (F-18) for a user action, in the caller's transaction. */
 export async function recordAudit(
   db: Db | Tx,
-  actor: Actor,
+  actor: Actor | SystemActor,
   entry: {
     action: string;
     entityType: string;
@@ -35,8 +38,8 @@ export async function recordAudit(
   },
 ): Promise<void> {
   await db.insert(auditLog).values({
-    actorType: 'user',
-    actorUserId: actor.userId,
+    actorType: 'system' in actor ? actor.system : 'user',
+    actorUserId: 'system' in actor ? null : actor.userId,
     action: entry.action,
     entityType: entry.entityType,
     entityId: entry.entityId,
@@ -44,9 +47,9 @@ export async function recordAudit(
       ...(entry.before ? { before: entry.before } : {}),
       ...(entry.after ? { after: entry.after } : {}),
     },
-    requestId: actor.meta.requestId,
-    ipAddress: actor.meta.ipAddress,
-    userAgent: actor.meta.userAgent,
+    requestId: 'system' in actor ? null : actor.meta.requestId,
+    ipAddress: 'system' in actor ? null : actor.meta.ipAddress,
+    userAgent: 'system' in actor ? null : actor.meta.userAgent,
   });
 }
 

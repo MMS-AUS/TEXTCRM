@@ -12,6 +12,7 @@ import type { Config } from './config.ts';
 import type { Db } from './db/client.ts';
 import type { Logger } from './logger.ts';
 import type { JobQueue } from './jobs/queue.ts';
+import type { SheetsReader } from './modules/imports/google-sheets.ts';
 import type { Storage } from './storage/storage.ts';
 import { createContextFactory } from './trpc/context.ts';
 import { appRouter } from './trpc/router.ts';
@@ -24,6 +25,8 @@ export interface AppDeps {
   /** Null when file storage isn't configured. */
   storage: Storage | null;
   jobs: JobQueue | null;
+  /** Null when the Google service account isn't configured. */
+  sheets: SheetsReader | null;
 }
 
 const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;

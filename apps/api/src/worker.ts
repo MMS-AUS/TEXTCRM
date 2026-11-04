@@ -5,6 +5,7 @@ import { createDb } from './db/client.ts';
 import { cleanupPendingUploads } from './jobs/cleanup.ts';
 import { createBoss, ensureQueues, QUEUES, type QueueName } from './jobs/queue.ts';
 import { createLogger } from './logger.ts';
+import { runImport } from './modules/imports/service.ts';
 import { createStorage } from './storage/storage.ts';
 
 // The background worker (Step 3.1): a separate process from the API, so a long import or sync
@@ -55,6 +56,9 @@ async function start() {
   await handle(QUEUES.cleanupUploads, async () => ({
     removed: await cleanupPendingUploads(db, storage),
   }));
+  await handle<{ importId: string }>(QUEUES.runImport, (data) =>
+    runImport(db, data.importId, logger.child({ queue: QUEUES.runImport })),
+  );
   // Jobs that failed every retry: logged loudly; the original stays listed as failed.
   await handle<object>(QUEUES.deadLetter, (data, job) => {
     logger.error({ jobId: job.id, data }, 'A job failed after every retry');

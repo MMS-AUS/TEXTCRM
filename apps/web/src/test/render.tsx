@@ -124,7 +124,16 @@ export function renderPage(
       </Providers>
     ),
   });
-  const stubs = ['/contacts', '/contacts/$contactId', '/companies', '/companies/$companyId']
+  const stubs = [
+    '/contacts',
+    '/contacts/$contactId',
+    '/companies',
+    '/companies/$companyId',
+    '/leads/$leadId',
+    '/settings',
+    '/settings/imports',
+    '/settings/imports/$importId',
+  ]
     .filter((stub) => stub !== path)
     .map((stub) =>
       createRoute({ getParentRoute: () => root, path: stub, component: () => <p>at {stub}</p> }),

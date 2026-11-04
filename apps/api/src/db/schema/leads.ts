@@ -1,8 +1,19 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, index, integer, numeric, pgTable, text, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  check,
+  index,
+  integer,
+  numeric,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { day, e164Check, id, lowercaseEmailCheck, money, timestamps, tstz } from './_columns.ts';
 import { companies, contacts } from './contacts.ts';
 import { hardwareBatteries, hardwareInverters, hardwarePanels } from './hardware.ts';
+import { sheetSyncSources } from './imports.ts';
 import { users } from './users.ts';
 
 /**
@@ -52,8 +63,10 @@ export const leads = pgTable(
     notes: text(),
     convertedAt: tstz(),
 
-    /** Google Sheets `Lead ID` (§1.8). Uniqueness per sheet source is added with Step 3.3. */
+    /** Google Sheets `Lead ID` (§1.8); also kept when a one-off import maps a Lead ID column. */
     sheetLeadId: text(),
+    /** The live sheet that owns `sheetLeadId` (Step 3.3); null for imported or typed-in leads. */
+    sheetSourceId: uuid().references(() => sheetSyncSources.id, { onDelete: 'set null' }),
     /** Set on the first CRM edit — after that the sheet sync never touches this lead (§1.8 rule 2). */
     crmEditedAt: tstz(),
 
@@ -76,6 +89,10 @@ export const leads = pgTable(
     index('leads_email_idx').on(t.email),
     index('leads_mobile_idx').on(t.mobile),
     index('leads_sheet_lead_id_idx').on(t.sheetLeadId),
+    // One lead per Lead ID per live sheet (§1.8 rule 1).
+    uniqueIndex('leads_sheet_source_lead_id_unique')
+      .on(t.sheetSourceId, t.sheetLeadId)
+      .where(sql`${t.sheetSourceId} is not null`),
     check('leads_email_lowercase', lowercaseEmailCheck(t.email)),
     check('leads_mobile_e164', e164Check(t.mobile)),
     check('leads_secondary_mobile_e164', e164Check(t.secondaryMobile)),

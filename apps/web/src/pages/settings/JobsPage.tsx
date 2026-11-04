@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '../../components/PageHeader.tsx';
+import { When } from '../../components/When.tsx';
 import { errorMessage } from '../../lib/errors.ts';
-import { formatDateTime, formatRelative } from '../../lib/format.ts';
 import { useCan } from '../../lib/hooks.ts';
 import { useTRPC, type RouterOutputs } from '../../lib/trpc.ts';
 import {
@@ -24,7 +24,6 @@ import {
   TableHeaderCell,
   TableRow,
   toast,
-  Tooltip,
   type BadgeTone,
 } from '../../ui/index.ts';
 import { SettingsBackLink } from './SettingsPage.tsx';
@@ -51,17 +50,6 @@ const ALL = '__all';
 
 const queueLabel = (name: string) =>
   Object.entries(JOB_QUEUE_LABELS).find(([queue]) => queue === name)?.[1].label ?? name;
-
-function When({ iso }: { iso: string | null }) {
-  if (!iso) return <span className="text-fg-subtle">—</span>;
-  return (
-    <Tooltip content={formatDateTime(iso)}>
-      <time dateTime={iso} tabIndex={0}>
-        {formatRelative(iso)}
-      </time>
-    </Tooltip>
-  );
-}
 
 function WorkerStatus({ lastSeen, running }: { lastSeen: string | null; running: boolean }) {
   return (

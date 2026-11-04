@@ -25,6 +25,8 @@ import {
 import { FeatureGate, PlaceholderPage } from '../pages/PlaceholderPage.tsx';
 import { ProjectDetailPage } from '../pages/projects/ProjectDetailPage.tsx';
 import { ProjectsPage } from '../pages/projects/ProjectsPage.tsx';
+import { ImportPage } from '../pages/settings/imports/ImportPage.tsx';
+import { ImportsPage } from '../pages/settings/imports/ImportsPage.tsx';
 import { JobsPage } from '../pages/settings/JobsPage.tsx';
 import { SettingsPage } from '../pages/settings/SettingsPage.tsx';
 import { Toaster } from '../ui/index.ts';
@@ -194,6 +196,26 @@ const jobsRoute = createRoute({
   ),
 });
 
+const importsRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/imports',
+  component: () => (
+    <FeatureGate title="Import" features={['leads', 'contacts']}>
+      <ImportsPage />
+    </FeatureGate>
+  ),
+});
+
+const importRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/imports/$importId',
+  component: () => (
+    <FeatureGate title="Import" features={['leads', 'contacts']}>
+      <ImportPage />
+    </FeatureGate>
+  ),
+});
+
 export const routeTree = rootRoute.addChildren([
   designRoute,
   appRoute.addChildren([
@@ -210,6 +232,8 @@ export const routeTree = rootRoute.addChildren([
     ticketsRoute,
     settingsRoute,
     jobsRoute,
+    importsRoute,
+    importRoute,
   ]),
 ]);
 

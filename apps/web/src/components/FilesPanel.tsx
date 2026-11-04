@@ -28,6 +28,7 @@ import { errorMessage } from '../lib/errors.ts';
 import { formatDate } from '../lib/format.ts';
 import { useCan } from '../lib/hooks.ts';
 import { useTRPC, type RouterOutputs } from '../lib/trpc.ts';
+import { putWithProgress } from '../lib/upload.ts';
 import {
   Alert,
   Badge,
@@ -40,6 +41,7 @@ import {
   DropdownMenuTrigger,
   EmptyState,
   IconButton,
+  Progress,
   Select,
   Skeleton,
   toast,
@@ -72,31 +74,6 @@ async function makeThumbnail(file: File): Promise<Blob | null> {
   } catch {
     return null; // A preview is a nice-to-have; the upload goes ahead without it.
   }
-}
-
-/** PUT to a presigned URL with upload progress (fetch can't report upload progress). */
-function putWithProgress(
-  url: string,
-  body: Blob,
-  contentType: string,
-  onProgress: (fraction: number) => void,
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const request = new XMLHttpRequest();
-    request.open('PUT', url);
-    request.setRequestHeader('Content-Type', contentType);
-    request.upload.onprogress = (event) => {
-      if (event.lengthComputable) onProgress(event.loaded / event.total);
-    };
-    request.onload = () => {
-      if (request.status >= 200 && request.status < 300) resolve();
-      else reject(new Error(`Storage refused the upload (${String(request.status)}).`));
-    };
-    request.onerror = () => {
-      reject(new Error("Couldn't reach file storage. Check your connection and try again."));
-    };
-    request.send(body);
-  });
 }
 
 function FileIcon({ contentType }: { contentType: string }) {
@@ -302,17 +279,11 @@ export function FilesPanel({
               {upload.error ? (
                 <p className="mt-1 text-xs text-danger-text">{upload.error}</p>
               ) : (
-                <div
-                  role="progressbar"
-                  aria-label={`Uploading ${upload.name}`}
-                  aria-valuenow={Math.round(upload.progress * 100)}
-                  className="mt-2 h-1 overflow-hidden rounded-full bg-surface-3"
-                >
-                  <div
-                    className="h-full bg-accent transition-[width]"
-                    style={{ width: `${String(Math.round(upload.progress * 100))}%` }}
-                  />
-                </div>
+                <Progress
+                  value={upload.progress}
+                  label={`Uploading ${upload.name}`}
+                  className="mt-2 h-1"
+                />
               )}
             </li>
           ))}

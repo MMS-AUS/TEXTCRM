@@ -1,12 +1,12 @@
 import { Link } from '@tanstack/react-router';
-import { ChevronRight, Cog, FileSpreadsheet } from 'lucide-react';
+import { ChevronRight, Cog, FileSpreadsheet, Upload } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { PageHeader } from '../../components/PageHeader.tsx';
 import { useCan } from '../../lib/hooks.ts';
 import { Alert, Card, EmptyState } from '../../ui/index.ts';
 
 type Section = {
-  to: '/settings/jobs';
+  to: '/settings/jobs' | '/settings/imports';
   title: string;
   description: string;
   icon: ReactNode;
@@ -16,7 +16,16 @@ type Section = {
 /** Settings home: one card per area the role can open. */
 export function SettingsPage() {
   const can = useCan();
+  const canImport = (feature: 'leads' | 'contacts') =>
+    can(feature, 'create') && can(feature, 'edit');
   const sections: Section[] = [
+    {
+      to: '/settings/imports',
+      title: 'Import',
+      description: 'Bring leads or contacts in from a CSV, Excel file or Google Sheet.',
+      icon: <Upload />,
+      visible: canImport('leads') || canImport('contacts'),
+    },
     {
       to: '/settings/jobs',
       title: 'Background jobs',

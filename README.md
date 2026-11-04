@@ -59,7 +59,7 @@ renders inside the protected layout and app shell (`apps/web/src/app/`).
 
 | Script                                                                   | Does                                                                 |
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
-| `npm run dev`                                                            | API (auto-restarts on change) and web together                       |
+| `npm run dev`                                                            | API, background worker and web together (auto-restart on change)     |
 | `npm run build`                                                          | Typecheck the API, production build of the web app                   |
 | `npm test`                                                               | Unit tests (no database needed)                                      |
 | `npm run test:integration`                                               | Database tests against `crm_test` (needs `db:up`)                    |
@@ -83,6 +83,17 @@ next to Postgres — S3 API on `127.0.0.1:9000`, web console on `127.0.0.1:9001`
 `crm-dev` / `crm-dev-secret`). The `S3_*` values in `.env.example` work as-is locally; the API
 creates the bucket and its browser-upload (CORS) rule on start. Browsers upload and download
 directly with short-lived presigned URLs that the API only issues after a permission check.
+
+## Imports and Google Sheets
+
+Settings → Import loads leads or contacts from a CSV/XLSX upload or a Google Sheet: map the
+columns, preview what every row will do (create / update / skip / error), confirm, and the
+worker runs it in the background. Nothing changes before you confirm, and re-importing the same
+sheet never creates duplicates (rows are matched by `Lead ID`, then by the duplicate rules).
+
+Google Sheets are read with a service account: set `GOOGLE_SERVICE_ACCOUNT_PATH` in `.env` to
+its JSON key (kept outside the repo), then share each sheet with the service account's email as
+**Viewer**. Without it, uploads still work and the wizard explains what is missing.
 
 ## Database
 

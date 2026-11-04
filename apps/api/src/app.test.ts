@@ -17,6 +17,7 @@ describe('HTTP app', () => {
       verifyIdToken: () => Promise.reject(new Error('invalid token')),
       storage: null,
       jobs: null,
+      sheets: null,
     });
     server = app.listen(0);
     await new Promise<void>((resolve) => server.once('listening', resolve));

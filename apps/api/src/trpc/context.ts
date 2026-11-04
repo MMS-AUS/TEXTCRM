@@ -9,6 +9,7 @@ import type { Config } from '../config.ts';
 import type { Db } from '../db/client.ts';
 import type { Logger } from '../logger.ts';
 import type { JobQueue } from '../jobs/queue.ts';
+import type { SheetsReader } from '../modules/imports/google-sheets.ts';
 import type { Storage } from '../storage/storage.ts';
 
 export interface Context {
@@ -20,6 +21,8 @@ export interface Context {
   storage: Storage | null;
   /** Null when the job queue couldn't start (jobs are then refused with a clear message). */
   jobs: JobQueue | null;
+  /** Null when GOOGLE_SERVICE_ACCOUNT_PATH isn't set. */
+  sheets: SheetsReader | null;
 }
 
 export interface ContextDeps {
@@ -28,6 +31,7 @@ export interface ContextDeps {
   verifyIdToken: VerifyIdToken;
   storage: Storage | null;
   jobs: JobQueue | null;
+  sheets: SheetsReader | null;
 }
 
 export function createContextFactory(deps: ContextDeps) {
@@ -41,6 +45,7 @@ export function createContextFactory(deps: ContextDeps) {
     db: deps.db,
     storage: deps.storage,
     jobs: deps.jobs,
+    sheets: deps.sheets,
     log: req.log,
     auth: await authenticate(req.headers.authorization, authDeps),
     meta: {

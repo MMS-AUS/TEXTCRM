@@ -4,6 +4,7 @@ import { loadConfig, type Config } from './config.ts';
 import { createDb } from './db/client.ts';
 import { createBoss, jobQueue, type JobQueue } from './jobs/queue.ts';
 import { createLogger } from './logger.ts';
+import { createSheetsReader, type SheetsReader } from './modules/imports/google-sheets.ts';
 import { createStorage, prepareDevBucket } from './storage/storage.ts';
 
 let config: Config;
@@ -40,6 +41,20 @@ try {
   logger.warn({ err: error }, 'Job queue unavailable — imports and syncs are off until restart.');
 }
 
+let sheets: SheetsReader | null = null;
+try {
+  sheets = await createSheetsReader(config.GOOGLE_SERVICE_ACCOUNT_PATH);
+  if (!sheets)
+    logger.warn(
+      'Google Sheets is not configured (GOOGLE_SERVICE_ACCOUNT_PATH) — sheet imports are off.',
+    );
+} catch (error) {
+  logger.error(
+    { err: error },
+    'Could not read the Google service-account key — sheet imports are off.',
+  );
+}
+
 const app = createApp({
   config,
   db,
@@ -47,6 +62,7 @@ const app = createApp({
   verifyIdToken: createFirebaseVerifier(config),
   storage,
   jobs,
+  sheets,
 });
 
 const server = app.listen(config.PORT, (error) => {

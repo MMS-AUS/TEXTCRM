@@ -174,7 +174,11 @@ async function userName(db: Db | Tx, id: string | null): Promise<string | null> 
  * Live leads that could be the same enquiry: same email, same phone, or same name. The precise
  * same-person-same-property decision is made by findDuplicateLead (shared, unit-tested).
  */
-async function findDuplicate(db: Db | Tx, candidate: DuplicateCandidate, excludeId?: string) {
+export async function findDuplicate(
+  db: Db | Tx,
+  candidate: DuplicateCandidate,
+  excludeId?: string,
+) {
   const phones = [candidate.mobile, candidate.secondaryMobile].filter((phone): phone is string =>
     Boolean(phone),
   );
@@ -211,7 +215,7 @@ async function findDuplicate(db: Db | Tx, candidate: DuplicateCandidate, exclude
 }
 
 /** Stored lead fields: the form values plus area/nearest city from the postcode. */
-function leadRow(values: LeadValues) {
+export function leadRow(values: LeadValues) {
   return {
     firstName: values.firstName,
     lastName: values.lastName,
