@@ -1,4 +1,13 @@
-import { boolean, check, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import {
+  boolean,
+  check,
+  pgTable,
+  primaryKey,
+  text,
+  uuid,
+  type AnyPgColumn,
+} from 'drizzle-orm/pg-core';
 import { id, lowercaseEmailCheck, timestamps, tstz } from './_columns.ts';
 
 export const roles = pgTable('roles', {
@@ -47,10 +56,21 @@ export const users = pgTable(
     department: text(),
     voiplineNumber: text(),
     smsSenderId: text(),
+    /**
+     * Who this person reports to. Their open leads move to the manager when they are
+     * deactivated (to the primary admin when there is none).
+     */
+    managerUserId: uuid().references((): AnyPgColumn => users.id, { onDelete: 'set null' }),
     isActive: boolean().notNull().default(true),
     deactivatedAt: tstz(),
     lastSignInAt: tstz(),
     ...timestamps,
   },
-  (t) => [check('users_email_lowercase', lowercaseEmailCheck(t.email))],
+  (t) => [
+    check('users_email_lowercase', lowercaseEmailCheck(t.email)),
+    check(
+      'users_manager_not_self',
+      sql`${t.managerUserId} is null or ${t.managerUserId} <> ${t.id}`,
+    ),
+  ],
 );

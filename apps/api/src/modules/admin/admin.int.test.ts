@@ -94,7 +94,7 @@ describe('admin settings (Step 2.10)', () => {
       });
       await db.update(users).set({ firebaseUid: 'firebase-akash' }).where(eq(users.id, id));
       const result = await as().admin.users.setActive({ id, active: false });
-      expect(result).toEqual({ id, sessionsRevoked: true });
+      expect(result).toEqual({ id, sessionsRevoked: true, reassigned: { count: 0, to: null } });
       expect(revoked).toEqual(['firebase-akash']);
       const [row] = await db.select().from(users).where(eq(users.id, id));
       expect(row).toMatchObject({ isActive: false });

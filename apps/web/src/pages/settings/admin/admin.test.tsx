@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/re
 import { afterEach, describe, expect, it } from 'vitest';
 import { emptyPermissionMatrix } from '@mms/shared';
 import { fakeAuth, fullAccessProfile, renderPage, type TrpcCall } from '../../../test/render.tsx';
+import { getToasts } from '../../../ui/toast-store.ts';
 import { RolesPage } from './RolesPage.tsx';
 import { UsersPage } from './UsersPage.tsx';
 
@@ -15,6 +16,8 @@ const users = [
     name: 'Micky',
     phone: null,
     department: null,
+    managerUserId: null,
+    managerName: null,
     roleId: 'admin-role',
     roleName: 'Admin',
     roleKey: 'admin',
@@ -31,6 +34,8 @@ const users = [
     name: 'Simon',
     phone: null,
     department: null,
+    managerUserId: '11111111-1111-4111-8111-111111111111',
+    managerName: 'Micky',
     roleId: salesRole,
     roleName: 'Sales',
     roleKey: 'sales',
@@ -56,6 +61,51 @@ describe('admin settings', () => {
     expect(within(table).getByText('(you)')).toBeDefined();
     expect(within(table).getByText('Invited')).toBeDefined();
     expect(within(table).getByText('Never')).toBeDefined();
+  });
+
+  it('deactivating says where their open leads go, then reports it', async () => {
+    const calls: TrpcCall[] = [];
+    renderPage(<UsersPage />, {
+      path: '/settings/users',
+      auth: signedIn(),
+      calls,
+      responses: {
+        'admin.users.list': users,
+        'admin.users.roleOptions': [],
+        'admin.users.deactivationPreview': {
+          openLeads: 3,
+          to: { id: '11111111-1111-4111-8111-111111111111', name: 'Micky', reason: 'manager' },
+        },
+        'admin.users.setActive': {
+          id: '22222222-2222-4222-8222-222222222222',
+          sessionsRevoked: false,
+          reassigned: { count: 3, to: 'Micky' },
+        },
+      },
+    });
+    const table = await screen.findByRole('table', { name: 'Users' });
+    expect(within(table).getAllByText('Micky').length).toBe(2); // a person, and Simon's manager
+    fireEvent.keyDown(within(table).getByRole('button', { name: 'Actions for Simon' }), {
+      key: 'Enter',
+    });
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Deactivate' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Deactivate Simon?' });
+    expect(
+      await within(dialog).findByText(/Their 3 open leads move to Micky \(their manager\)/),
+    ).toBeDefined();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Deactivate' }));
+    await waitFor(() => {
+      expect(calls.find((c) => c.path === 'admin.users.setActive')?.input).toEqual({
+        id: '22222222-2222-4222-8222-222222222222',
+        active: false,
+      });
+    });
+    await waitFor(() => {
+      expect(getToasts().at(-1)).toMatchObject({
+        title: 'Simon deactivated',
+        description: 'Their next action in the CRM signs them out. 3 open leads moved to Micky.',
+      });
+    });
   });
 
   it('adding a user checks the form before calling the API', async () => {

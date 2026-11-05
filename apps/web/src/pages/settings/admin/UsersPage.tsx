@@ -128,7 +128,46 @@ function InviteForm({ onDone }: { onDone: () => void }) {
   );
 }
 
-function EditForm({ user, onDone }: { user: User; onDone: () => void }) {
+const NO_MANAGER = 'none';
+
+/** Who they report to: their open leads go to this person when they're deactivated. */
+function ManagerField({
+  control,
+  user,
+  people,
+}: {
+  control: Parameters<typeof FormField<UpdateUserInput, 'managerUserId'>>[0]['control'];
+  user: User;
+  people: User[];
+}) {
+  return (
+    <FormField
+      control={control}
+      name="managerUserId"
+      label="Manager"
+      hint="If they're deactivated, their open leads go to this person (or the primary admin)."
+    >
+      {(field, props) => (
+        <Select
+          {...props}
+          name={field.name}
+          value={field.value ?? NO_MANAGER}
+          onValueChange={(value) => {
+            field.onChange(value === NO_MANAGER ? null : value);
+          }}
+          options={[
+            { value: NO_MANAGER, label: 'No manager' },
+            ...people
+              .filter((p) => p.isActive && p.id !== user.id)
+              .map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
+      )}
+    </FormField>
+  );
+}
+
+function EditForm({ user, people, onDone }: { user: User; people: User[]; onDone: () => void }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const update = useMutation(trpc.admin.users.update.mutationOptions());
@@ -140,6 +179,7 @@ function EditForm({ user, onDone }: { user: User; onDone: () => void }) {
       roleId: user.roleId,
       phone: user.phone ?? '',
       department: user.department ?? '',
+      managerUserId: user.managerUserId,
     },
   });
   const submit = form.handleSubmit(async (values) => {
@@ -171,6 +211,9 @@ function EditForm({ user, onDone }: { user: User; onDone: () => void }) {
         <FormField control={form.control} name="department" label="Department">
           {(field, props) => <Input {...props} {...textInput(field)} />}
         </FormField>
+        <div className="sm:col-span-2">
+          <ManagerField control={form.control} user={user} people={people} />
+        </div>
       </DialogBody>
       <DialogFooter>
         <Button variant="ghost" onClick={onDone}>
@@ -194,6 +237,17 @@ export function UsersPage() {
   const [inviting, setInviting] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [deactivating, setDeactivating] = useState<User | null>(null);
+  const preview = useQuery({
+    ...trpc.admin.users.deactivationPreview.queryOptions({ id: deactivating?.id ?? '' }),
+    enabled: deactivating !== null,
+  });
+  const leadsNote = !preview.data
+    ? 'Checking their open leads…'
+    : preview.data.openLeads === 0
+      ? 'They have no open leads.'
+      : preview.data.to
+        ? `Their ${preview.data.openLeads === 1 ? 'open lead moves' : `${String(preview.data.openLeads)} open leads move`} to ${preview.data.to.name} (${preview.data.to.reason === 'manager' ? 'their manager' : 'the primary admin'}), noted on each lead's timeline.`
+        : 'Nobody can take over their open leads — add another active admin first.';
 
   const reactivate = (user: User) => {
     setActive
@@ -239,6 +293,7 @@ export function UsersPage() {
                 <tr>
                   <TableHeaderCell>Person</TableHeaderCell>
                   <TableHeaderCell>Role</TableHeaderCell>
+                  <TableHeaderCell>Manager</TableHeaderCell>
                   <TableHeaderCell>Status</TableHeaderCell>
                   <TableHeaderCell>Last sign-in</TableHeaderCell>
                   <TableHeaderCell />
@@ -262,6 +317,9 @@ export function UsersPage() {
                       </span>
                     </TableCell>
                     <TableCell>{user.roleName}</TableCell>
+                    <TableCell>
+                      {user.managerName ?? <span className="text-fg-subtle">—</span>}
+                    </TableCell>
                     <TableCell>
                       {user.isActive ? (
                         user.hasSignedIn ? (
@@ -355,6 +413,7 @@ export function UsersPage() {
           {editing && (
             <EditForm
               user={editing}
+              people={query.data ?? []}
               onDone={() => {
                 setEditing(null);
               }}
@@ -368,18 +427,29 @@ export function UsersPage() {
           if (!open) setDeactivating(null);
         }}
         title={`Deactivate ${deactivating?.name ?? ''}?`}
-        description="They are signed out and can't sign in again. Their leads, tasks and history stay, and you can reactivate them later."
+        description={
+          <>
+            They are signed out and can't sign in again. {leadsNote} Their other records and history
+            stay, and you can reactivate them later (leads don't move back).
+          </>
+        }
         confirmLabel="Deactivate"
         destructive
         onConfirm={async () => {
           if (!deactivating) return;
           const result = await setActive.mutateAsync({ id: deactivating.id, active: false });
           await queryClient.invalidateQueries(trpc.admin.users.pathFilter());
+          await queryClient.invalidateQueries(trpc.leads.pathFilter());
+          const signedOut = result.sessionsRevoked
+            ? 'Signed out on every device.'
+            : 'Their next action in the CRM signs them out.';
+          const moved = result.reassigned.count;
           toast({
             title: `${deactivating.name} deactivated`,
-            description: result.sessionsRevoked
-              ? 'Signed out on every device.'
-              : 'Their next action in the CRM signs them out.',
+            description:
+              moved && result.reassigned.to
+                ? `${signedOut} ${moved === 1 ? '1 open lead' : `${String(moved)} open leads`} moved to ${result.reassigned.to}.`
+                : signedOut,
             tone: 'success',
           });
         }}

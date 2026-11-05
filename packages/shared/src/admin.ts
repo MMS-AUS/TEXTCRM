@@ -53,6 +53,11 @@ export const updateUserSchema = z.object({
   roleId: z.uuid({ error: 'Choose a role.' }),
   phone: optionalText(50),
   department: optionalText(100),
+  /**
+   * Who they report to; their open leads go to this person when they're deactivated.
+   * Omitted = unchanged; null = nobody (the primary admin takes them).
+   */
+  managerUserId: z.uuid().nullable().optional(),
 });
 export type UpdateUserInput = z.input<typeof updateUserSchema>;
 

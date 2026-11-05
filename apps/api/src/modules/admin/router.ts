@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import { and, asc, count, desc, eq, ilike, isNotNull, isNull, ne, or, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import {
   companyProfileSchema,
@@ -32,6 +33,7 @@ import {
 import { permissionProcedure, protectedProcedure, router } from '../../trpc/trpc.ts';
 import { diff, recordAudit, type Actor } from '../audit.ts';
 import { containsPattern } from '../search.ts';
+import { reassignOpenLeads, reassignPreview, reassignTarget } from './reassign.ts';
 
 // Settings → admin (Step 2.10). Guards that keep the CRM usable: there is always at least one
 // active admin, nobody can lock themselves out, the Admin role always has every permission,
@@ -79,6 +81,8 @@ async function loadUser(db: Db | Tx, id: string) {
 
 // ── Users ────────────────────────────────────────────────────────────────
 
+const managers = alias(users, 'managers');
+
 const usersRouter = router({
   list: permissionProcedure('users', 'view').query(async ({ ctx }) => {
     const rows = await ctx.db
@@ -88,6 +92,8 @@ const usersRouter = router({
         name: users.name,
         phone: users.phone,
         department: users.department,
+        managerUserId: users.managerUserId,
+        managerName: managers.name,
         roleId: users.roleId,
         roleName: roles.name,
         roleKey: roles.key,
@@ -99,6 +105,7 @@ const usersRouter = router({
       })
       .from(users)
       .innerJoin(roles, eq(roles.id, users.roleId))
+      .leftJoin(managers, eq(managers.id, users.managerUserId))
       .orderBy(desc(users.isActive), asc(users.name));
     return rows.map((row) => ({
       ...row,
@@ -156,9 +163,19 @@ const usersRouter = router({
             throw bad(`${user.name} is the only active admin. Make someone else an admin first.`);
           }
         }
-        const changes = diff(user, input.values);
+        const { managerUserId, ...rest } = input.values;
+        const values = managerUserId === undefined ? rest : { ...rest, managerUserId };
+        if (managerUserId && managerUserId !== user.managerUserId) {
+          if (managerUserId === user.id) throw bad('Someone can’t be their own manager.');
+          const [manager] = await tx
+            .select({ isActive: users.isActive })
+            .from(users)
+            .where(eq(users.id, managerUserId));
+          if (!manager?.isActive) throw bad('Choose an active user as the manager.');
+        }
+        const changes = diff(user, values);
         if (!changes) return { id: user.id };
-        await tx.update(users).set(input.values).where(eq(users.id, user.id));
+        await tx.update(users).set(values).where(eq(users.id, user.id));
         await recordAudit(tx, actorOf(ctx), {
           action: 'update',
           entityType: 'user',
@@ -169,17 +186,28 @@ const usersRouter = router({
       }),
     ),
 
+  /** Before deactivating: how many open leads will move, and to whom. */
+  deactivationPreview: permissionProcedure('users', 'view')
+    .input(z.object({ id: z.uuid() }))
+    .query(async ({ ctx, input }) => {
+      const { user } = await loadUser(ctx.db, input.id);
+      return reassignPreview(ctx.db, user);
+    }),
+
   /**
    * Offboarding: a deactivated user can't sign in or use an open session (checked on every
    * request); their Firebase sessions are also revoked when the service account is set up.
-   * Their records and history stay.
+   * Their open leads move to their manager (or the primary admin) in the same transaction —
+   * if that fails, they stay active. Their records and history stay.
    */
   setActive: permissionProcedure('users', 'edit')
     .input(z.object({ id: z.uuid(), active: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.db.transaction(async (tx) => {
         const { user, roleKey } = await loadUser(tx, input.id);
-        if (user.isActive === input.active) return { user, changed: false };
+        if (user.isActive === input.active) {
+          return { user, changed: false, reassigned: { count: 0, to: null as string | null } };
+        }
         if (!input.active) {
           if (user.id === ctx.user.id) throw bad("You can't deactivate yourself.");
           if (roleKey === ADMIN_ROLE && (await activeAdmins(tx, user.id)) === 0) {
@@ -190,6 +218,16 @@ const usersRouter = router({
           .update(users)
           .set({ isActive: input.active, deactivatedAt: input.active ? null : new Date() })
           .where(eq(users.id, user.id));
+        let reassigned: { count: number; to: string | null } = { count: 0, to: null };
+        if (!input.active) {
+          const target = await reassignTarget(tx, user);
+          if (target) {
+            const moved = await reassignOpenLeads(tx, actorOf(ctx), user, target);
+            reassigned = { count: moved, to: moved ? target.name : null };
+          } else if ((await reassignPreview(tx, user)).openLeads > 0) {
+            throw bad(`Nobody can take over ${user.name}’s open leads. Add another active admin.`);
+          }
+        }
         await recordAudit(tx, actorOf(ctx), {
           action: input.active ? 'reactivate' : 'deactivate',
           entityType: 'user',
@@ -197,7 +235,7 @@ const usersRouter = router({
           before: { isActive: user.isActive },
           after: { isActive: input.active },
         });
-        return { user, changed: true };
+        return { user, changed: true, reassigned };
       });
       let sessionsRevoked = false;
       if (result.changed && !input.active && result.user.firebaseUid && ctx.sessions) {
@@ -212,7 +250,7 @@ const usersRouter = router({
           );
         }
       }
-      return { id: input.id, sessionsRevoked };
+      return { id: input.id, sessionsRevoked, reassigned: result.reassigned };
     }),
 
   roleOptions: permissionProcedure('users', 'view').query(({ ctx }) =>

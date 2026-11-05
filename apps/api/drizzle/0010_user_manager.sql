@@ -1,0 +1,3 @@
+ALTER TABLE "users" ADD COLUMN "manager_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_manager_user_id_users_id_fk" FOREIGN KEY ("manager_user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "users" ADD CONSTRAINT "users_manager_not_self" CHECK ("users"."manager_user_id" is null or "users"."manager_user_id" <> "users"."id");
