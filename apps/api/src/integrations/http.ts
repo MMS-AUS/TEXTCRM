@@ -42,7 +42,7 @@ export async function call(
   fetchImpl: Fetch,
   provider: IntegrationProvider,
   url: string,
-  init: RequestInit = {},
+  init: RequestInit & { timeoutMs?: number } = {},
 ): Promise<{ status: number; ok: boolean; body: unknown }> {
   let response: Response;
   try {
@@ -51,7 +51,7 @@ export async function call(
     response = await fetchImpl(url, {
       ...init,
       headers,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(init.timeoutMs ?? TIMEOUT_MS),
     });
   } catch (error) {
     const timedOut = error instanceof Error && error.name === 'TimeoutError';
@@ -59,7 +59,7 @@ export async function call(
       provider,
       'network',
       timedOut
-        ? `${LABEL[provider]} didn't answer within ${String(TIMEOUT_MS / 1000)} seconds. Try again.`
+        ? `${LABEL[provider]} didn't answer within ${String((init.timeoutMs ?? TIMEOUT_MS) / 1000)} seconds. Try again.`
         : `Couldn't reach ${LABEL[provider]}. Check the server's internet connection and try again.`,
     );
   }

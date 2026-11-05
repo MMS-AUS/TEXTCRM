@@ -13,8 +13,11 @@ import {
   Trash2,
   XCircle,
   Zap,
+  MessageSquare,
 } from 'lucide-react';
 import { useState } from 'react';
+import { ComposeButtons } from '../../components/messaging/ComposeDialogs.tsx';
+import { MessagesPanel } from '../../components/messaging/MessagesPanel.tsx';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
@@ -210,6 +213,16 @@ function LeadView({ lead }: { lead: Lead }) {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            <ComposeButtons
+              disabled={deleted}
+              target={{
+                entityType: 'lead',
+                entityId: lead.id,
+                phone: lead.mobile,
+                email: lead.email,
+                name,
+              }}
+            />
             <div className="w-48">
               <Select
                 aria-label="Sales person"
@@ -442,6 +455,10 @@ function LeadView({ lead }: { lead: Lead }) {
                       </Badge>
                     )}
                   </TabsTrigger>
+                  <TabsTrigger value="messages">
+                    <MessageSquare />
+                    Messages
+                  </TabsTrigger>
                   <TabsTrigger value="files">
                     <Paperclip />
                     Files
@@ -453,6 +470,9 @@ function LeadView({ lead }: { lead: Lead }) {
                 </TabsList>
                 <TabsContent value="activity">
                   <ActivityTimeline entityType="lead" entityId={lead.id} readOnly={deleted} />
+                </TabsContent>
+                <TabsContent value="messages">
+                  <MessagesPanel entityType="lead" entityId={lead.id} />
                 </TabsContent>
                 <TabsContent value="files">
                   <FilesPanel entityType="lead" entityId={lead.id} readOnly={deleted} />

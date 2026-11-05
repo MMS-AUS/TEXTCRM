@@ -5,6 +5,7 @@ import {
   Cog,
   Cpu,
   FileSpreadsheet,
+  Signature,
   ListChecks,
   PlugZap,
   RefreshCw,
@@ -27,7 +28,8 @@ type Section = {
     | '/settings/imports'
     | '/settings/sheet-sync'
     | '/settings/jobs'
-    | '/settings/integrations';
+    | '/settings/integrations'
+    | '/settings/email-signature';
   title: string;
   description: string;
   icon: ReactNode;
@@ -56,6 +58,18 @@ export function SettingsPage() {
           description: 'What each role can view, create, edit, delete and export.',
           icon: <ShieldCheck />,
           visible: can('roles', 'view'),
+        },
+      ],
+    },
+    {
+      title: 'You',
+      sections: [
+        {
+          to: '/settings/email-signature',
+          title: 'Email signature',
+          description: 'Your name, title, phone and logo under the emails you send.',
+          icon: <Signature />,
+          visible: true,
         },
       ],
     },

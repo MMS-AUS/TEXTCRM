@@ -13,6 +13,7 @@ import type { Db } from './db/client.ts';
 import type { Logger } from './logger.ts';
 import type { JobQueue } from './jobs/queue.ts';
 import { oauthCallbacks } from './integrations/routes.ts';
+import type { PushVerifier } from './integrations/pubsub.ts';
 import { providerWebhooks } from './integrations/webhooks.ts';
 import { createIntegrations, type Integrations } from './integrations/service.ts';
 import type { SheetsReader } from './modules/imports/google-sheets.ts';
@@ -35,6 +36,8 @@ export interface AppDeps {
   sessions?: SessionRevoker | null;
   /** Defaults to nothing configured (tests). */
   integrations?: Integrations;
+  /** Checks Gmail push tokens; defaults to Google's signing keys (a local key set in tests). */
+  gmailPushVerifier?: PushVerifier;
 }
 
 const REQUEST_ID_PATTERN = /^[\w-]{1,128}$/;
@@ -95,7 +98,13 @@ export function createApp(appDeps: AppDeps) {
   app.use(
     '/webhooks',
     limiter(300),
-    providerWebhooks({ db: deps.db, integrations: deps.integrations, logger: deps.logger }),
+    providerWebhooks({
+      db: deps.db,
+      integrations: deps.integrations,
+      logger: deps.logger,
+      jobs: deps.jobs,
+      gmailPushVerifier: deps.gmailPushVerifier,
+    }),
   );
   app.use('/oauth', limiter(30), express.Router());
 

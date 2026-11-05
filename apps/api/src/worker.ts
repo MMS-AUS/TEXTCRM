@@ -4,7 +4,10 @@ import { loadConfig, type Config } from './config.ts';
 import { createDb } from './db/client.ts';
 import { cleanupPendingUploads } from './jobs/cleanup.ts';
 import { createBoss, ensureQueues, QUEUES, type QueueName } from './jobs/queue.ts';
+import { createIntegrations } from './integrations/service.ts';
 import { createLogger } from './logger.ts';
+import { cleanupAbandonedAttachments } from './modules/messaging/compose.ts';
+import { syncAllMailboxes, syncMailbox } from './modules/messaging/inbox.ts';
 import { createSheetsReader, type SheetsReader } from './modules/imports/google-sheets.ts';
 import { runImport } from './modules/imports/service.ts';
 import { syncCron, syncEnabledSources, syncSheetSource } from './modules/sheet-sync/sync.ts';
@@ -24,6 +27,7 @@ try {
 const logger = createLogger(config).child({ process: 'worker' });
 const db = createDb(config.DATABASE_URL);
 const storage = createStorage(config);
+const integrations = createIntegrations(config);
 const boss = createBoss(config.DATABASE_URL, 'worker');
 boss.on('error', (error) => {
   logger.error({ err: error }, 'Job queue error');
@@ -67,6 +71,8 @@ async function start() {
   await handle(QUEUES.heartbeat, () => Promise.resolve({ at: new Date().toISOString() }));
   await handle(QUEUES.cleanupUploads, async () => ({
     removed: await cleanupPendingUploads(db, storage),
+    // Email attachments for emails that were never sent (and aren't on a draft).
+    emailAttachments: await cleanupAbandonedAttachments(db, storage),
   }));
   await handle<{ importId: string }>(QUEUES.runImport, (data) =>
     runImport(db, data.importId, logger.child({ queue: QUEUES.runImport })),
@@ -77,6 +83,13 @@ async function start() {
     if (!data.sourceId) return syncEnabledSources(db, sheets, log);
     if (!sheets) throw new Error('GOOGLE_SERVICE_ACCOUNT_PATH is not set');
     return (await syncSheetSource(db, sheets, data.sourceId, 'manual', log)) ?? undefined;
+  });
+  // Gmail inbox sync (Step 5.2): a push sends one mailbox; the schedule catches up on all of them.
+  await handle<{ connectionId?: string }>(QUEUES.syncGmail, (data) => {
+    const log = logger.child({ queue: QUEUES.syncGmail });
+    return data.connectionId
+      ? syncMailbox(db, integrations, data.connectionId, log)
+      : syncAllMailboxes(db, integrations, log);
   });
   // Jobs that failed every retry: logged loudly; the original stays listed as failed.
   await handle<object>(QUEUES.deadLetter, (data, job) => {
@@ -91,6 +104,15 @@ async function start() {
     {},
     {
       tz: BUSINESS_TIME_ZONE,
+    },
+  );
+  await boss.schedule(
+    QUEUES.syncGmail,
+    '*/2 * * * *',
+    {},
+    {
+      tz: BUSINESS_TIME_ZONE,
+      singletonKey: 'all',
     },
   );
   await boss.schedule(QUEUES.cleanupUploads, '17 * * * *', null, { tz: BUSINESS_TIME_ZONE });

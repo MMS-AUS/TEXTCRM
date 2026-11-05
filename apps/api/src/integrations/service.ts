@@ -7,7 +7,12 @@ import {
 } from '@mms/shared';
 import type { Config } from '../config.ts';
 import type { Db, Tx } from '../db/client.ts';
-import { integrationConnections, integrationOAuthStates, users } from '../db/schema/index.ts';
+import {
+  gmailSyncState,
+  integrationConnections,
+  integrationOAuthStates,
+  users,
+} from '../db/schema/index.ts';
 import type { Logger } from '../logger.ts';
 import { recordAudit, type Actor } from '../modules/audit.ts';
 import { decryptJson, encryptJson, parseEncryptionKey, type EncryptionKey } from './crypto.ts';
@@ -20,6 +25,7 @@ import {
   type GmailConfig,
 } from './gmail.ts';
 import { ProviderError, type Fetch } from './http.ts';
+import type { GmailPushConfig } from './pubsub.ts';
 import { messageMediaCheck, type MessageMediaCreds } from './messagemedia.ts';
 import { needsRefresh, pkce, randomToken, type OAuthTokens } from './oauth.ts';
 import {
@@ -42,6 +48,8 @@ export type Integrations = {
   fetch: Fetch;
   key: EncryptionKey;
   gmail: GmailConfig | null;
+  /** Gmail inbox push notifications (Pub/Sub). */
+  gmailPush: GmailPushConfig;
   xero: XeroConfig | null;
   /** MessageMedia credentials from .env, used when none were saved in the CRM. */
   messageMediaEnv: MessageMediaCreds | null;
@@ -60,6 +68,9 @@ type IntegrationsConfig = Partial<
     | 'GOOGLE_OAUTH_CLIENT_ID'
     | 'GOOGLE_OAUTH_CLIENT_SECRET'
     | 'GOOGLE_OAUTH_REDIRECT_URI'
+    | 'GMAIL_PUBSUB_TOPIC'
+    | 'GMAIL_PUSH_AUDIENCE'
+    | 'GMAIL_PUSH_SERVICE_ACCOUNT'
     | 'XERO_CLIENT_ID'
     | 'XERO_CLIENT_SECRET'
     | 'XERO_REDIRECT_URI'
@@ -102,6 +113,11 @@ export function createIntegrations(
       config.GOOGLE_OAUTH_CLIENT_SECRET,
       config.GOOGLE_OAUTH_REDIRECT_URI,
     ),
+    gmailPush: {
+      topic: config.GMAIL_PUBSUB_TOPIC ?? null,
+      audience: config.GMAIL_PUSH_AUDIENCE ?? null,
+      serviceAccount: config.GMAIL_PUSH_SERVICE_ACCOUNT?.toLowerCase() ?? null,
+    },
     xero: oauth(config.XERO_CLIENT_ID, config.XERO_CLIENT_SECRET, config.XERO_REDIRECT_URI),
     messageMediaEnv:
       config.MESSAGEMEDIA_API_KEY && config.MESSAGEMEDIA_API_SECRET
@@ -662,6 +678,28 @@ const view = (row: Connection | null) =>
   };
 
 /** What each provider looks like for this user. Never includes secrets. */
+/** Gmail inbox sync for Settings: live (Pub/Sub watch) or polled, and how the last run went. */
+async function inboxView(db: Db, int: Integrations, connectionId: string) {
+  const [state] = await db
+    .select()
+    .from(gmailSyncState)
+    .where(eq(gmailSyncState.connectionId, connectionId));
+  const live =
+    !!int.gmailPush.topic && !!state?.watchExpiresAt && state.watchExpiresAt.getTime() > Date.now();
+  return {
+    mode: live ? ('live' as const) : ('polling' as const),
+    /** Why it isn't live, when Pub/Sub is meant to be on. */
+    pushProblem: !int.gmailPush.topic
+      ? 'GMAIL_PUBSUB_TOPIC is not set, so the inbox is checked every 2 minutes.'
+      : !int.gmailPush.audience
+        ? 'GMAIL_PUSH_AUDIENCE is not set, so Gmail pushes are refused.'
+        : null,
+    lastSyncAt: state?.lastSyncAt?.toISOString() ?? null,
+    lastPushAt: state?.lastPushAt?.toISOString() ?? null,
+    lastSyncError: state?.lastSyncError ?? null,
+  };
+}
+
 export async function integrationStatus(
   db: Db,
   int: Integrations,
@@ -689,6 +727,7 @@ export async function integrationStatus(
       connection: view(row),
       /** MessageMedia only: credentials saved in the CRM, or taken from .env. */
       credentialsFrom: mm,
+      inbox: provider === 'gmail' && row ? await inboxView(db, int, row.id) : null,
       xeroChoices:
         provider === 'xero' && row?.status === 'needs_tenant'
           ? ((row.metadata.tenants ?? []) as XeroTenant[]).map((t) => ({

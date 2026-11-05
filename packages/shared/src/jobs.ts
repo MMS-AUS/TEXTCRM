@@ -6,6 +6,7 @@ export const JOB_QUEUES = {
   cleanupUploads: 'files-cleanup-pending',
   runImport: 'imports-run',
   syncSheets: 'sheets-sync',
+  syncGmail: 'gmail-sync',
   deadLetter: 'dead-letter',
 } as const;
 
@@ -22,6 +23,11 @@ export const JOB_QUEUE_LABELS: Record<JobQueueName, { label: string; description
   },
   'imports-run': { label: 'Imports', description: 'Runs a confirmed import from the wizard' },
   'sheets-sync': { label: 'Sheet sync', description: 'Reads the live leads sheets' },
+  'gmail-sync': {
+    label: 'Gmail inbox sync',
+    description:
+      'Customer emails from connected mailboxes — on each Gmail push, and every 2 minutes',
+  },
   'dead-letter': { label: 'Failed after retries', description: 'Jobs that failed every attempt' },
 };
 

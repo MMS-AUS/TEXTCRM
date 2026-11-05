@@ -158,6 +158,38 @@ function ConnectionDetails({ provider }: { provider: Provider }) {
           label: 'Last checked',
           value: c.lastCheckedAt ? <When iso={c.lastCheckedAt} /> : 'Never',
         },
+        ...(provider.inbox
+          ? [
+              {
+                label: 'Customer replies',
+                value: (
+                  <span className="flex flex-col gap-0.5">
+                    <span>
+                      {provider.inbox.mode === 'live'
+                        ? 'Live — Gmail tells the CRM about new mail'
+                        : 'Checked every 2 minutes'}
+                      {provider.inbox.lastSyncAt && (
+                        <span className="text-fg-muted">
+                          {' '}
+                          · last checked <When iso={provider.inbox.lastSyncAt} />
+                        </span>
+                      )}
+                    </span>
+                    {provider.inbox.lastSyncError ? (
+                      <span className="text-xs text-danger-text">
+                        {provider.inbox.lastSyncError}
+                      </span>
+                    ) : (
+                      provider.inbox.mode !== 'live' &&
+                      provider.inbox.pushProblem && (
+                        <span className="text-xs text-fg-muted">{provider.inbox.pushProblem}</span>
+                      )
+                    )}
+                  </span>
+                ),
+              },
+            ]
+          : []),
         ...(c.lastError
           ? [
               {

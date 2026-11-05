@@ -18,8 +18,11 @@ import {
   Trash2,
   UserRoundX,
   Zap,
+  MessageSquare,
 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
+import { ComposeButtons } from '../../components/messaging/ComposeDialogs.tsx';
+import { MessagesPanel } from '../../components/messaging/MessagesPanel.tsx';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
@@ -320,7 +323,17 @@ function ContactView({ contact }: { contact: Contact }) {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <ComposeButtons
+            disabled={archived}
+            target={{
+              entityType: 'contact',
+              entityId: contact.id,
+              phone: contact.mobile,
+              email: contact.email,
+              name,
+            }}
+          />
           {editable && (
             <Button
               onClick={() => {
@@ -494,6 +507,10 @@ function ContactView({ contact }: { contact: Contact }) {
                     Tickets
                   </TabsTrigger>
                 )}
+                <TabsTrigger value="messages">
+                  <MessageSquare />
+                  Messages
+                </TabsTrigger>
                 <TabsTrigger value="files">
                   <Paperclip />
                   Files
@@ -516,6 +533,9 @@ function ContactView({ contact }: { contact: Contact }) {
                   <RecordTickets contactId={contact.id} contactName={fullName(contact)} />
                 </TabsContent>
               )}
+              <TabsContent value="messages">
+                <MessagesPanel entityType="contact" entityId={contact.id} />
+              </TabsContent>
               <TabsContent value="files">
                 <FilesPanel entityType="contact" entityId={contact.id} readOnly={archived} />
               </TabsContent>

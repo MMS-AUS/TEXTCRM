@@ -53,7 +53,7 @@ describe('countSms', () => {
 
 describe('emailSendSchema', () => {
   it('refuses a subject that could inject headers', () => {
-    const base = { entityType: 'lead', entityId: crypto.randomUUID(), body: 'Hi' } as const;
+    const base = { entityType: 'lead', entityId: crypto.randomUUID(), html: '<p>Hi</p>' } as const;
     expect(
       emailSendSchema.safeParse({ ...base, subject: 'Quote\r\nBcc: evil@x.com' }).success,
     ).toBe(false);

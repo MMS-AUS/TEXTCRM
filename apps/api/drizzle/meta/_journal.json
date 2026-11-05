@@ -50,6 +50,27 @@
       "when": 1793803182196,
       "tag": "0006_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793813515565,
+      "tag": "0007_gmail_inbox",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793817615948,
+      "tag": "0008_email_compose",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793904048083,
+      "tag": "0009_email_message_id_unique",
+      "breakpoints": true
     }
   ]
 }

@@ -43,6 +43,12 @@ const configSchema = z.object({
   GOOGLE_OAUTH_CLIENT_ID: optionalString,
   GOOGLE_OAUTH_CLIENT_SECRET: optionalString,
   GOOGLE_OAUTH_REDIRECT_URI: optionalString,
+  /** Gmail inbox push (§2.2): projects/<project>/topics/<topic>. Without it the inbox is polled. */
+  GMAIL_PUBSUB_TOPIC: optionalString,
+  /** The audience on the Pub/Sub push subscription's token; push is refused without it. */
+  GMAIL_PUSH_AUDIENCE: optionalString,
+  /** The push subscription's service account email; when set, only its tokens are accepted. */
+  GMAIL_PUSH_SERVICE_ACCOUNT: optionalString,
   XERO_CLIENT_ID: optionalString,
   XERO_CLIENT_SECRET: optionalString,
   XERO_REDIRECT_URI: optionalString,

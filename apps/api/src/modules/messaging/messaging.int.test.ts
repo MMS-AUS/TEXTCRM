@@ -116,10 +116,15 @@ describe('SMS and email (Steps 5.3, 5.2)', () => {
     ({ id: leadId } = await as().leads.create({
       values: { firstName: 'Olivia', mobile: '0412 345 678', email: 'olivia@example.com' },
     }));
-    providers.on('POST https://api.messagemedia.com/v1/messages', () => ({
-      status: 202,
-      body: { messages: [{ message_id: 'mm-msg-1', status: 'queued' }] },
-    }));
+    let sends = 0;
+    // Each send gets its own id, as MessageMedia's do (the first is mm-msg-1).
+    providers.on('POST https://api.messagemedia.com/v1/messages', () => {
+      sends += 1;
+      return {
+        status: 202,
+        body: { messages: [{ message_id: `mm-msg-${String(sends)}`, status: 'queued' }] },
+      };
+    });
   });
   afterAll(() => db.$client.end());
 
@@ -232,6 +237,65 @@ describe('SMS and email (Steps 5.3, 5.2)', () => {
       await expect(
         as(viewer).messaging.sendSms({ entityType: 'lead', entityId: leadId, content: 'Hi' }),
       ).rejects.toThrow('does not allow');
+    });
+  });
+
+  describe('message history for a customer', () => {
+    it('a contact page shows the messages of its leads and tickets; roles see only what they may', async () => {
+      const { id: ticketId } = await as().tickets.create({
+        contactId,
+        title: 'WiFi drop',
+        priority: 'Low',
+      });
+      const { id: projectLead } = await as().leads.create({
+        values: {
+          firstName: 'Jack',
+          mobile: '0423 456 789',
+          email: 'jack@example.com',
+          streetAddress: '4 Elm Ave',
+          suburb: 'Toowong',
+          state: 'QLD',
+          postcode: '4066',
+        },
+      });
+      const { id: projectId } = await as().projects.convertLead({ leadId: projectLead });
+      await as().messaging.sendSms({
+        entityType: 'ticket',
+        entityId: ticketId,
+        content: 'Technician booked',
+      });
+      await as().messaging.sendSms({
+        entityType: 'project',
+        entityId: projectId,
+        content: 'Install on Friday',
+      });
+      await as().messaging.sendSms({
+        entityType: 'contact',
+        entityId: contactId,
+        content: 'Thanks Jack',
+      });
+
+      const history = await as().messaging.history({ entityType: 'contact', entityId: contactId });
+      expect(history.map((m) => m.body)).toEqual([
+        'Thanks Jack',
+        'Install on Friday',
+        'Technician booked',
+      ]);
+      expect(history[0]?.source).toBeNull();
+      expect(history[2]?.source).toEqual({ entityType: 'ticket', entityId: ticketId });
+
+      const contactsOnly = emptyPermissionMatrix();
+      contactsOnly.contacts.view = true;
+      const limited = await as(contactsOnly).messaging.history({
+        entityType: 'contact',
+        entityId: contactId,
+      });
+      expect(limited.map((m) => m.body)).toEqual(['Thanks Jack']);
+
+      // The project's own page shows the customer's messages too.
+      expect(
+        (await as().messaging.history({ entityType: 'project', entityId: projectId })).length,
+      ).toBe(3);
     });
   });
 
@@ -383,14 +447,19 @@ describe('SMS and email (Steps 5.3, 5.2)', () => {
         status: 200,
         body: { id: 'gm-1', threadId: 'th-1', labelIds: ['SENT'] },
       }));
+      // The Message-ID Gmail gave it, so colleagues' CC copies are known as the same email.
+      providers.on('GET https://gmail.googleapis.com/gmail/v1/users/me/messages/gm-1?', () => ({
+        status: 200,
+        body: { payload: { headers: [{ name: 'Message-Id', value: '<CAgm1@mail.gmail.com>' }] } },
+      }));
       const result = await as().messaging.sendEmail({
         entityType: 'lead',
         entityId: leadId,
         subject: 'Your solar quote — 6.6 kW',
-        body: 'Hi Olivia,\n\nYour quote is attached.\n\nMicky',
+        html: '<p>Hi Olivia,</p><p>Your quote is <strong>attached</strong>:</p><ul><li>6.6 kW</li><li>10 kWh battery</li></ul><p><a href="https://makemysolar.com.au/q/1">View it</a><img src="x" onerror="alert(1)"></p><script>alert(1)</script><p>Micky</p>',
       });
       expect(result).toMatchObject({ to: ['olivia@example.com'], threadId: 'th-1' });
-      const call = providers.calls.at(-1);
+      const call = providers.calls.findLast((c) => c.url.endsWith('/messages/send'));
       expect(call?.headers.get('authorization')).toBe('Bearer g-access');
       const mime = Buffer.from(
         (JSON.parse(call?.body ?? '{}') as { raw: string }).raw,
@@ -407,9 +476,20 @@ describe('SMS and email (Steps 5.3, 5.2)', () => {
         status: 'sent',
         gmailMessageId: 'gm-1',
         gmailThreadId: 'th-1',
+        messageIdHeader: '<CAgm1@mail.gmail.com>',
         fromAddress: 'micky@makemysolar.com.au',
         toAddresses: ['olivia@example.com'],
+        // Formatting kept; the image and script are gone.
+        bodyHtml:
+          '<p>Hi Olivia,</p><p>Your quote is <strong>attached</strong>:</p><ul><li>6.6 kW</li><li>10 kWh battery</li></ul><p><a href="https://makemysolar.com.au/q/1">View it</a></p><p>Micky</p>',
+        bodyText:
+          'Hi Olivia,\n\nYour quote is attached:\n\n• 6.6 kW\n• 10 kWh battery\n\nView it (https://makemysolar.com.au/q/1)\n\nMicky',
       });
+      expect(mime).toContain(
+        Buffer.from(row?.bodyText ?? '', 'utf8')
+          .toString('base64')
+          .slice(0, 60),
+      );
       const [activity] = await db.select().from(activities).where(eq(activities.type, 'email'));
       expect(activity).toMatchObject({ entityId: leadId, subject: 'Your solar quote — 6.6 kW' });
       const list = await as().messaging.emails({ entityType: 'lead', entityId: leadId });
@@ -426,7 +506,7 @@ describe('SMS and email (Steps 5.3, 5.2)', () => {
           entityType: 'contact',
           entityId: contactId,
           subject: 'Hi',
-          body: 'Hi',
+          html: '<p>Hi</p>',
         }),
       ).rejects.toThrow('Connect your Gmail first');
       await connectGmail();
@@ -439,7 +519,7 @@ describe('SMS and email (Steps 5.3, 5.2)', () => {
           entityType: 'contact',
           entityId: contactId,
           subject: 'Hi',
-          body: 'Hi',
+          html: '<p>Hi</p>',
         }),
       ).rejects.toThrow('refused the credentials');
       expect((await db.select().from(integrationConnections))[0]?.status).toBe('expired');
@@ -452,7 +532,7 @@ describe('SMS and email (Steps 5.3, 5.2)', () => {
           entityType: 'contact',
           entityId: contactId,
           subject: 'Hi',
-          body: 'Hi',
+          html: '<p>Hi</p>',
         }),
       ).rejects.toThrow('has expired. Reconnect');
     });

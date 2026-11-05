@@ -19,5 +19,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // A file's first routed render is slow when every file runs at once (cold module graph);
+    // 5 s made whichever page went first time out at random.
+    testTimeout: 15_000,
   },
 });

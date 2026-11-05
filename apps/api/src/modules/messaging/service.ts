@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { TRPCError } from '@trpc/server';
-import { and, desc, eq, isNull, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, or } from 'drizzle-orm';
 import {
   countSms,
   formatPhone,
@@ -13,6 +13,8 @@ import type { Db, Tx } from '../../db/client.ts';
 import {
   activities,
   contacts,
+  emailAttachments,
+  emailDrafts,
   emailMessages,
   integrationConnections,
   leads,
@@ -22,7 +24,8 @@ import {
   users,
 } from '../../db/schema/index.ts';
 import type { Logger } from '../../logger.ts';
-import { buildMime, gmailSend } from '../../integrations/gmail.ts';
+import { emailReadyHtml, htmlToText, sanitizeComposeHtml } from '../../integrations/email-html.ts';
+import { buildMime, gmailMessageIdHeader, gmailSend } from '../../integrations/gmail.ts';
 import { ProviderError } from '../../integrations/http.ts';
 import { messageMediaSend } from '../../integrations/messagemedia.ts';
 import {
@@ -32,7 +35,9 @@ import {
   messageMediaCreds,
   type Integrations,
 } from '../../integrations/service.ts';
+import type { Storage } from '../../storage/storage.ts';
 import { assertEntityExists } from '../entities.ts';
+import { loadAttachmentsForSend, signatureForSend } from './compose.ts';
 
 // Sending SMS and email from a record (Steps 5.3, 5.2) and receiving SMS (webhooks). Every
 // message is logged — failures included — and appears on the record's timeline.
@@ -42,7 +47,7 @@ type Sender = { id: string; name: string; email: string };
 const bad = (message: string) => new TRPCError({ code: 'BAD_REQUEST', message });
 
 /** The record's customer: their contact (if any), mobile and email. */
-async function recipientOf(db: Db | Tx, entityType: ActivityEntityType, entityId: string) {
+export async function recipientOf(db: Db | Tx, entityType: ActivityEntityType, entityId: string) {
   await assertEntityExists(db, entityType, entityId);
   const contactById = async (id: string | null) => {
     if (!id) return null;
@@ -190,34 +195,38 @@ export async function sendSms(
     .set({ metadata: { smsMessageId: row.id } })
     .where(eq(activities.id, row.activityId ?? ''));
 
+  let sent: { messageId: string };
   try {
-    const sent = await messageMediaSend(int.fetch, found.creds, {
+    sent = await messageMediaSend(int.fetch, found.creds, {
       to,
       content: input.content,
       from,
       callbackUrl: webhookUrl(int, 'delivery') ?? undefined,
     });
-    await db
-      .update(smsMessages)
-      .set({ status: 'sent', providerMessageId: sent.messageId, statusAt: new Date() })
-      .where(eq(smsMessages.id, row.id));
-    return {
-      id: row.id,
-      status: 'sent' as const,
-      to,
-      segments: count.segments,
-      deliveryReports: webhookUrl(int, 'delivery') !== null,
-    };
   } catch (error) {
+    // Only a failure of the send itself means "not sent".
     const message = error instanceof ProviderError ? error.message : 'The SMS could not be sent.';
-    if (!(error instanceof ProviderError))
+    if (!(error instanceof ProviderError)) {
       log?.error({ err: error, smsId: row.id }, 'SMS send failed');
+    }
     await db
       .update(smsMessages)
       .set({ status: 'failed', error: message, statusAt: new Date() })
       .where(eq(smsMessages.id, row.id));
     throw bad(`${message} (Logged on the timeline as not sent.)`);
   }
+  // MessageMedia has it: record that, even if something else goes wrong afterwards.
+  await db
+    .update(smsMessages)
+    .set({ status: 'sent', providerMessageId: sent.messageId, statusAt: new Date() })
+    .where(eq(smsMessages.id, row.id));
+  return {
+    id: row.id,
+    status: 'sent' as const,
+    to,
+    segments: count.segments,
+    deliveryReports: webhookUrl(int, 'delivery') !== null,
+  };
 }
 
 const FINAL_SMS = ['delivered', 'expired', 'rejected', 'failed', 'undeliverable'];
@@ -380,12 +389,27 @@ export async function sendEmail(
   sender: Sender,
   input: EmailSendInput,
   log?: Logger,
+  storage: Storage | null = null,
 ) {
   const recipient = await recipientOf(db, input.entityType, input.entityId);
   const to = input.to?.length ? input.to : recipient.email ? [recipient.email] : [];
   if (to.length === 0)
     throw bad('This record has no email address. Add one, or type who to send to.');
   const cc = input.cc ?? [];
+  const html = sanitizeComposeHtml(input.html);
+  const text = htmlToText(html);
+  if (!text) throw bad('Write the email.');
+  // A reply must be to an email of this customer; it threads in Gmail when it's the same mailbox.
+  let original: typeof emailMessages.$inferSelect | undefined;
+  if (input.replyToId) {
+    [original] = await db.select().from(emailMessages).where(eq(emailMessages.id, input.replyToId));
+    const sameRecord =
+      original?.entityType === input.entityType && original.entityId === input.entityId;
+    const sameCustomer = !!recipient.contactId && original?.contactId === recipient.contactId;
+    if (!original || !(sameRecord || sameCustomer)) {
+      throw bad('That email isn’t part of this record’s messages.');
+    }
+  }
   const connection = await loadConnection(db, 'gmail', sender.id);
   if (!connection || connection.status === 'expired') {
     throw bad(
@@ -395,6 +419,14 @@ export async function sendEmail(
     );
   }
   const fromAddress = connection.accountName ?? sender.email;
+  // Read before anything is logged, so a missing file is a plain error with nothing recorded.
+  const attachments = await loadAttachmentsForSend(db, storage, sender, input.attachmentIds ?? []);
+  const signature = input.includeSignature ? await signatureForSend(db, storage, sender) : null;
+  const storedHtml = signature ? `${html}${signature.storedHtml}` : html;
+  const storedText = signature?.text ? `${text}\n\n${signature.text}` : text;
+  const attachedLine = attachments.rows.length
+    ? `\n\nAttached: ${attachments.rows.map((r) => r.fileName).join(', ')}`
+    : '';
   const log_ = async (values: Partial<typeof emailMessages.$inferInsert> & { status: string }) =>
     db.transaction(async (tx) => {
       const [activity] =
@@ -407,7 +439,7 @@ export async function sendEmail(
                 type: 'email',
                 direction: 'outbound',
                 subject: input.subject,
-                body: input.body,
+                body: text + attachedLine,
                 authorUserId: sender.id,
               })
               .returning({ id: activities.id })
@@ -425,7 +457,10 @@ export async function sendEmail(
           toAddresses: to,
           ccAddresses: cc,
           subject: input.subject,
-          bodyText: input.body,
+          bodyText: storedText,
+          bodyHtml: storedHtml,
+          attachmentCount: attachments.rows.length,
+          inReplyToId: original?.id ?? null,
           sentByUserId: sender.id,
           ...values,
         })
@@ -435,6 +470,25 @@ export async function sendEmail(
           .update(activities)
           .set({ metadata: { emailMessageId: row.id } })
           .where(eq(activities.id, activity.id));
+      }
+      if (values.status === 'sent' && row) {
+        // The files now belong to the sent email; the draft (if any) is done.
+        if (attachments.rows.length) {
+          await tx
+            .update(emailAttachments)
+            .set({ emailMessageId: row.id, draftId: null })
+            .where(
+              inArray(
+                emailAttachments.id,
+                attachments.rows.map((r) => r.id),
+              ),
+            );
+        }
+        if (input.draftId) {
+          await tx
+            .delete(emailDrafts)
+            .where(and(eq(emailDrafts.id, input.draftId), eq(emailDrafts.userId, sender.id)));
+        }
       }
       return row?.id ?? '';
     });
@@ -446,16 +500,29 @@ export async function sendEmail(
       to,
       cc,
       subject: input.subject,
-      text: input.body,
+      text: signature?.text ? `${text}\n\n${signature.text}` : text,
+      html: emailReadyHtml(html) + (signature?.html ?? ''),
+      inReplyTo: original?.messageIdHeader ?? null,
+      attachments: attachments.files,
+      inline: signature?.logo ? [signature.logo] : [],
     });
-    const sent = await gmailSend(int.fetch, tokens.accessToken, mime);
+    // Gmail thread IDs belong to one mailbox: only reuse it when replying from that mailbox.
+    const threadId = original?.mailboxUserId === sender.id ? original.gmailThreadId : null;
+    const sent = await gmailSend(int.fetch, tokens.accessToken, mime, threadId);
+    // Best effort: the email has gone either way.
+    const messageIdHeader = await gmailMessageIdHeader(
+      int.fetch,
+      tokens.accessToken,
+      sent.messageId,
+    ).catch(() => null);
     const id = await log_({
       status: 'sent',
       gmailMessageId: sent.messageId,
       gmailThreadId: sent.threadId,
+      messageIdHeader,
       sentAt: new Date(),
     });
-    return { id, to, threadId: sent.threadId };
+    return { id, to, threadId: sent.threadId, attachments: attachments.rows.length };
   } catch (error) {
     if (!(error instanceof ProviderError || error instanceof IntegrationUserError)) {
       log?.error({ err: error }, 'Email send failed');

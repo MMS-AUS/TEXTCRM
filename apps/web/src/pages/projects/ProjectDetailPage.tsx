@@ -11,7 +11,10 @@ import {
   Paperclip,
   Phone,
   StickyNote,
+  MessageSquare,
 } from 'lucide-react';
+import { ComposeButtons } from '../../components/messaging/ComposeDialogs.tsx';
+import { MessagesPanel } from '../../components/messaging/MessagesPanel.tsx';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
 import { FilesPanel } from '../../components/FilesPanel.tsx';
 import { HistoryList } from '../../components/HistoryList.tsx';
@@ -256,6 +259,17 @@ function ProjectView({ project }: { project: Project }) {
               )}
             </p>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <ComposeButtons
+              target={{
+                entityType: 'project',
+                entityId: project.id,
+                phone: project.contact.mobile,
+                email: project.contact.email,
+                name: customer,
+              }}
+            />
+          </div>
         </div>
 
         <Card>
@@ -369,6 +383,10 @@ function ProjectView({ project }: { project: Project }) {
                 Tickets
               </TabsTrigger>
             )}
+            <TabsTrigger value="messages">
+              <MessageSquare />
+              Messages
+            </TabsTrigger>
             <TabsTrigger value="files">
               <Paperclip />
               Files
@@ -410,6 +428,13 @@ function ProjectView({ project }: { project: Project }) {
               </Card>
             </TabsContent>
           )}
+          <TabsContent value="messages">
+            <Card>
+              <CardContent>
+                <MessagesPanel entityType="project" entityId={project.id} />
+              </CardContent>
+            </Card>
+          </TabsContent>
           <TabsContent value="files">
             <Card>
               <CardContent className="flex flex-col gap-6">

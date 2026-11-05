@@ -1,8 +1,19 @@
 import { formatAud, formatPhone, TICKET_PRIORITIES, ticketAgeDays } from '@mms/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
-import { ArrowLeft, LifeBuoy, Mail, Paperclip, Pencil, Phone, StickyNote } from 'lucide-react';
+import {
+  ArrowLeft,
+  LifeBuoy,
+  Mail,
+  Paperclip,
+  Pencil,
+  Phone,
+  StickyNote,
+  MessageSquare,
+} from 'lucide-react';
 import { useState } from 'react';
+import { ComposeButtons } from '../../components/messaging/ComposeDialogs.tsx';
+import { MessagesPanel } from '../../components/messaging/MessagesPanel.tsx';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
 import { FilesPanel } from '../../components/FilesPanel.tsx';
@@ -199,6 +210,17 @@ function TicketView({ ticket }: { ticket: Ticket }) {
             {ticket.closedAt && <Badge>Closed {formatDate(ticket.closedAt)}</Badge>}
           </div>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <ComposeButtons
+            target={{
+              entityType: 'ticket',
+              entityId: ticket.id,
+              phone: ticket.contact?.mobile ?? null,
+              email: ticket.contact?.email ?? null,
+              name: ticket.contact ? fullName(ticket.contact) : ticket.ticketNumber,
+            }}
+          />
+        </div>
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-3">
         <div className="flex flex-col gap-6">
@@ -217,6 +239,10 @@ function TicketView({ ticket }: { ticket: Ticket }) {
                 <StickyNote />
                 Activity
               </TabsTrigger>
+              <TabsTrigger value="messages">
+                <MessageSquare />
+                Messages
+              </TabsTrigger>
               <TabsTrigger value="files">
                 <Paperclip />
                 Files
@@ -226,6 +252,13 @@ function TicketView({ ticket }: { ticket: Ticket }) {
               <Card>
                 <CardContent>
                   <ActivityTimeline entityType="ticket" entityId={ticket.id} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            <TabsContent value="messages">
+              <Card>
+                <CardContent>
+                  <MessagesPanel entityType="ticket" entityId={ticket.id} />
                 </CardContent>
               </Card>
             </TabsContent>

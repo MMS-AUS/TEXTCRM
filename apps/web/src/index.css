@@ -295,6 +295,96 @@
   }
 }
 
+/* An email as the customer sees it: white paper with the default email font, in light and
+   dark mode alike (the colours people choose are meant for a white background). */
+@layer components {
+  .email-paper {
+    background: #ffffff;
+    color: #222222;
+    color-scheme: light;
+  }
+  .email-text {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    & p {
+      margin-block: 0;
+    }
+    & hr {
+      border: none;
+      border-top: 1px solid #cccccc;
+      margin-block: 12px;
+    }
+    & blockquote {
+      border-left: 1px solid #cccccc;
+      padding-left: 1ex;
+      margin-left: 0.8ex;
+      color: inherit;
+    }
+    & a {
+      color: #1a73e8;
+    }
+  }
+}
+
+/* Email content: the composer (TipTap) and received emails in the Messages tab. Preflight
+   removes list markers and spacing, so formatted text gets them back here. */
+@layer components {
+  .rich-text {
+    overflow-wrap: anywhere;
+    & p,
+    & ul,
+    & ol,
+    & blockquote,
+    & table,
+    & pre {
+      margin-block: 0.5em;
+    }
+    & > :first-child {
+      margin-top: 0;
+    }
+    & > :last-child {
+      margin-bottom: 0;
+    }
+    & ul {
+      list-style: disc;
+      padding-left: 1.5em;
+    }
+    & ol {
+      list-style: decimal;
+      padding-left: 1.5em;
+    }
+    & li > p {
+      margin-block: 0;
+    }
+    & a {
+      color: var(--accent-text);
+      text-decoration: underline;
+    }
+    & blockquote {
+      border-left: 3px solid var(--line-strong);
+      padding-left: 0.75em;
+      color: var(--fg-muted);
+    }
+    & h1,
+    & h2,
+    & h3,
+    & h4 {
+      font-weight: 600;
+      margin-block: 0.5em;
+    }
+    & td,
+    & th {
+      padding: 0.125em 0.5em;
+      vertical-align: top;
+    }
+    & pre {
+      white-space: pre-wrap;
+      font-family: var(--font-mono, monospace);
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

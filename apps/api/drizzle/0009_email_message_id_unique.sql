@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "email_messages_message_id_header_unique" ON "email_messages" USING btree ("message_id_header") WHERE "email_messages"."message_id_header" is not null;

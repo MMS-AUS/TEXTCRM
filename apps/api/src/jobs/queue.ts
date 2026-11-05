@@ -27,11 +27,13 @@ const QUEUE_OPTIONS: Record<Exclude<QueueName, 'dead-letter'>, Omit<Queue, 'name
     retryBackoff: true,
     expireInSeconds: 600,
   },
+  // One queued + one running per mailbox (singletonKey): a burst of pushes collapses into one run.
+  'gmail-sync': { policy: 'stately', retryLimit: 1, retryDelay: 30, expireInSeconds: 300 },
 };
 
 /** What the API needs from the queue; a fake stands in for it in tests. */
 export interface JobQueue {
-  send(name: QueueName, data: object): Promise<string | null>;
+  send(name: QueueName, data: object, options?: { singletonKey?: string }): Promise<string | null>;
   /** Puts a failed job back in the queue. */
   retry(name: string, id: string): Promise<void>;
 }
@@ -74,7 +76,7 @@ export async function ensureQueues(boss: PgBoss): Promise<void> {
 
 export function jobQueue(boss: PgBoss): JobQueue {
   return {
-    send: (name, data) => boss.send(name, data),
+    send: (name, data, options) => boss.send(name, data, options ?? {}),
     retry: async (name, id) => {
       await boss.retry(name, id);
     },

@@ -37,6 +37,7 @@ import { OptionListsPage } from '../pages/settings/admin/OptionListsPage.tsx';
 import { HardwarePage } from '../pages/settings/admin/HardwarePage.tsx';
 import { CompanyPage } from '../pages/settings/admin/CompanyPage.tsx';
 import { IntegrationsPage } from '../pages/settings/integrations/IntegrationsPage.tsx';
+import { EmailSignaturePage } from '../pages/settings/signature/EmailSignaturePage.tsx';
 import { JobsPage } from '../pages/settings/JobsPage.tsx';
 import {
   NewSheetSourcePage,
@@ -327,6 +328,13 @@ const integrationsRoute = createRoute({
   component: IntegrationsPage,
 });
 
+// Everyone may open it: the signature is each person's own.
+const emailSignatureRoute = createRoute({
+  getParentRoute: () => appRoute,
+  path: '/settings/email-signature',
+  component: EmailSignaturePage,
+});
+
 export const routeTree = rootRoute.addChildren([
   designRoute,
   appRoute.addChildren([
@@ -355,6 +363,7 @@ export const routeTree = rootRoute.addChildren([
     hardwareSettingsRoute,
     companySettingsRoute,
     integrationsRoute,
+    emailSignatureRoute,
   ]),
 ]);
 
