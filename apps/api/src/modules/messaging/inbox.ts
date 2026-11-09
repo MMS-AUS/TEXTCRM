@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import type { ActivityEntityType } from '@mms/shared';
 import type { Db } from '../../db/client.ts';
 import {
@@ -123,7 +123,9 @@ async function matchAddress(db: Db, address: string): Promise<Target | null> {
   const [lead] = await db
     .select({ id: leads.id, contactId: leads.contactId })
     .from(leads)
-    .where(and(eq(leads.email, address), isNull(leads.deletedAt)))
+    .where(
+      and(or(eq(leads.email, address), eq(leads.secondaryEmail, address)), isNull(leads.deletedAt)),
+    )
     .orderBy(desc(leads.updatedAt))
     .limit(1);
   if (lead) {

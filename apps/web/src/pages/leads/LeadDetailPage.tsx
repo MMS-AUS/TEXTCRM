@@ -57,6 +57,7 @@ const LEAD_FIELD_LABELS: Record<string, string> = {
   firstName: 'First name',
   lastName: 'Last name',
   email: 'Email',
+  secondaryEmail: 'Secondary email',
   mobile: 'Mobile',
   secondaryMobile: 'Other phone',
   streetAddress: 'Street',
@@ -339,6 +340,17 @@ function LeadView({ lead }: { lead: Lead }) {
                         className="hover:text-accent-text hover:underline"
                       >
                         {lead.email}
+                      </a>
+                    ),
+                  },
+                  {
+                    label: 'Secondary email',
+                    value: lead.secondaryEmail && (
+                      <a
+                        href={`mailto:${lead.secondaryEmail}`}
+                        className="hover:text-accent-text hover:underline"
+                      >
+                        {lead.secondaryEmail}
                       </a>
                     ),
                   },

@@ -38,6 +38,15 @@ describe('duplicate detection', () => {
         { ...olivia, secondaryMobile: '+61299998888' },
       ])?.reason,
     ).toBe('same phone number');
+    // Emails match across primary and secondary, in either direction.
+    expect(
+      findDuplicateLead({ firstName: 'O', email: 'liv@work.example' }, [
+        { ...olivia, secondaryEmail: 'liv@work.example' },
+      ])?.matchedOn,
+    ).toBe('email');
+    expect(
+      findDuplicateLead({ firstName: 'O', secondaryEmail: 'olivia@example.com' }, [olivia])?.reason,
+    ).toBe('same email (olivia@example.com)');
   });
 
   it('allows the same person at a different property (a new lead)', () => {

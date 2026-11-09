@@ -36,6 +36,7 @@ export type EditableLead = {
   firstName: string;
   lastName: string | null;
   email: string | null;
+  secondaryEmail: string | null;
   mobile: string | null;
   secondaryMobile: string | null;
   streetAddress: string | null;
@@ -141,6 +142,7 @@ function LeadForm({ lead, onDone }: { lead?: EditableLead; onDone: (id: string) 
       firstName: lead?.firstName ?? '',
       lastName: lead?.lastName ?? '',
       email: lead?.email ?? '',
+      secondaryEmail: lead?.secondaryEmail ?? '',
       mobile: formatPhone(lead?.mobile),
       secondaryMobile: formatPhone(lead?.secondaryMobile),
       streetAddress: lead?.streetAddress ?? '',
@@ -214,6 +216,15 @@ function LeadForm({ lead, onDone }: { lead?: EditableLead; onDone: (id: string) 
             {(field, props) => <Input {...props} {...textInput(field)} type="tel" />}
           </FormField>
           <FormField control={control} name="email" label="Email" className="sm:col-span-2">
+            {(field, props) => <Input {...props} {...textInput(field)} type="email" />}
+          </FormField>
+          <FormField
+            control={control}
+            name="secondaryEmail"
+            label="Secondary email"
+            hint="e.g. a work address"
+            className="sm:col-span-2"
+          >
             {(field, props) => <Input {...props} {...textInput(field)} type="email" />}
           </FormField>
         </fieldset>

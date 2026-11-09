@@ -62,6 +62,21 @@ const PERSON_FIELDS = [
   field('postcode', 'Postcode', ['post code', 'zip', 'postal code']),
 ];
 
+/** Leads also keep a second email (contacts don't), listed right after Email. */
+const LEAD_PERSON_FIELDS = PERSON_FIELDS.flatMap((personField) =>
+  personField.key === 'email'
+    ? [
+        personField,
+        field('secondaryEmail', 'Secondary Email', [
+          'other email',
+          'alternate email',
+          'alternative email',
+          'second email',
+        ]),
+      ]
+    : [personField],
+);
+
 /** §1.8 "Expected columns" — the old intake sheet's headers are recognised as-is. */
 export const LEAD_IMPORT_FIELDS: readonly ImportField[] = [
   field(
@@ -80,7 +95,7 @@ export const LEAD_IMPORT_FIELDS: readonly ImportField[] = [
     'Matched to a user by name or email',
   ),
   field('status', 'Status', ['lead status']),
-  ...PERSON_FIELDS,
+  ...LEAD_PERSON_FIELDS,
   field('systemSizeKw', 'System Size kW', ['system size', 'kw', 'system kw']),
   field('batteryRequired', 'Battery Required', ['battery'], 'Yes / No'),
   field('propertyType', 'Property Type', []),

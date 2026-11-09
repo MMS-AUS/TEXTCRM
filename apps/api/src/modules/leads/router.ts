@@ -84,6 +84,7 @@ function filtersWhere(filters: Filters, userId: string, ignoreStatuses = false):
     const matches = [
       sql`${fullNameSql} ilike ${pattern}`,
       ilike(leads.email, pattern),
+      ilike(leads.secondaryEmail, pattern),
       ilike(leads.suburb, pattern),
       /^\d{4}$/.test(filters.search) ? eq(leads.postcode, filters.search) : undefined,
       phoneContains(leads.mobile, filters.search),
@@ -182,9 +183,13 @@ export async function findDuplicate(
   const phones = [candidate.mobile, candidate.secondaryMobile].filter((phone): phone is string =>
     Boolean(phone),
   );
+  const emails = [candidate.email, candidate.secondaryEmail].filter((email): email is string =>
+    Boolean(email),
+  );
   const name = normaliseName(`${candidate.firstName} ${candidate.lastName ?? ''}`);
   const possible = or(
-    candidate.email ? eq(leads.email, candidate.email) : undefined,
+    emails.length ? inArray(leads.email, emails) : undefined,
+    emails.length ? inArray(leads.secondaryEmail, emails) : undefined,
     phones.length ? inArray(leads.mobile, phones) : undefined,
     phones.length ? inArray(leads.secondaryMobile, phones) : undefined,
     name.length > 2
@@ -198,6 +203,7 @@ export async function findDuplicate(
       firstName: leads.firstName,
       lastName: leads.lastName,
       email: leads.email,
+      secondaryEmail: leads.secondaryEmail,
       mobile: leads.mobile,
       secondaryMobile: leads.secondaryMobile,
       streetAddress: leads.streetAddress,
@@ -220,6 +226,7 @@ export function leadRow(values: LeadValues) {
     firstName: values.firstName,
     lastName: values.lastName,
     email: values.email,
+    secondaryEmail: values.secondaryEmail,
     mobile: values.mobile,
     secondaryMobile: values.secondaryMobile,
     streetAddress: values.streetAddress,
@@ -376,6 +383,7 @@ export const leadsRouter = router({
             firstName: leads.firstName,
             lastName: leads.lastName,
             email: leads.email,
+            secondaryEmail: leads.secondaryEmail,
             mobile: leads.mobile,
             suburb: leads.suburb,
             state: leads.state,

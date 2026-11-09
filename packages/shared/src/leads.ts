@@ -31,6 +31,7 @@ export const leadInputSchema = z
     firstName: z.string().trim().min(1, 'Enter a first name.').max(100),
     lastName: optionalText(100),
     email: optionalEmail,
+    secondaryEmail: optionalEmail,
     mobile: optionalPhone,
     secondaryMobile: optionalPhone,
     streetAddress: optionalText(200),
@@ -163,6 +164,7 @@ export type DuplicateCandidate = {
   firstName: string;
   lastName?: string | null;
   email?: string | null;
+  secondaryEmail?: string | null;
   mobile?: string | null;
   secondaryMobile?: string | null;
   streetAddress?: string | null;
@@ -200,6 +202,9 @@ export function findDuplicateLead<T extends DuplicateCandidate>(
   candidate: DuplicateCandidate,
   existing: readonly T[],
 ): DuplicateMatch<T> | null {
+  const candidateEmails = [candidate.email, candidate.secondaryEmail].filter(
+    (email): email is string => Boolean(email),
+  );
   const candidatePhones = [candidate.mobile, candidate.secondaryMobile].filter(
     (phone): phone is string => Boolean(phone),
   );
@@ -211,9 +216,9 @@ export function findDuplicateLead<T extends DuplicateCandidate>(
   for (const lead of existing) {
     if (areDistinctProperties(candidate, lead)) continue;
 
-    if (candidate.email && lead.email === candidate.email) {
-      return { lead, matchedOn: 'email', reason: `same email (${candidate.email})` };
-    }
+    const leadEmails = [lead.email, lead.secondaryEmail].filter(Boolean);
+    const email = candidateEmails.find((e) => leadEmails.includes(e));
+    if (email) return { lead, matchedOn: 'email', reason: `same email (${email})` };
     const leadPhones = [lead.mobile, lead.secondaryMobile].filter(Boolean);
     const phone = candidatePhones.find((p) => leadPhones.includes(p));
     if (phone) return { lead, matchedOn: 'phone', reason: 'same phone number' };

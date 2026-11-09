@@ -111,6 +111,7 @@ function firstIssue(error: z.ZodError, labels: Record<string, string>): string {
 const LEAD_LABELS: Record<string, string> = {
   firstName: 'First name',
   email: 'Email',
+  secondaryEmail: 'Secondary email',
   mobile: 'Mobile',
   secondaryMobile: 'Secondary mobile',
   state: 'State',
@@ -194,6 +195,7 @@ export function toLeadRecord(data: Record<string, string>, lookups: Lookups): Re
   const parsed = leadInputSchema.safeParse({
     ...names(data),
     email: data.email,
+    secondaryEmail: data.secondaryEmail,
     mobile: cleanPhone(data.mobile),
     secondaryMobile: cleanPhone(data.secondaryMobile),
     streetAddress: data.streetAddress,
@@ -287,6 +289,7 @@ const INTAKE_KEYS = [
   'firstName',
   'lastName',
   'email',
+  'secondaryEmail',
   'mobile',
   'secondaryMobile',
   'streetAddress',

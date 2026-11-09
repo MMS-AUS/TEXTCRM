@@ -1,0 +1,3 @@
+ALTER TABLE "leads" ADD COLUMN "secondary_email" text;--> statement-breakpoint
+ALTER TABLE "leads" ADD CONSTRAINT "leads_secondary_email_lowercase" CHECK ("leads"."secondary_email" = lower(btrim("leads"."secondary_email")));--> statement-breakpoint
+ALTER TABLE "leads" ADD CONSTRAINT "leads_secondary_email_format" CHECK ("leads"."secondary_email" ~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$');

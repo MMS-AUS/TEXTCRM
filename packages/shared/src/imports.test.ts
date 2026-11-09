@@ -38,6 +38,17 @@ describe('suggestMapping', () => {
     });
   });
 
+  it('maps a Secondary Email column for leads but not contacts', () => {
+    const headers = ['Name', 'Email', 'Secondary Email'];
+    expect(suggestMapping('leads', headers)).toEqual({
+      fullName: 'Name',
+      email: 'Email',
+      secondaryEmail: 'Secondary Email',
+    });
+    expect(suggestMapping('leads', ['Other Email']).secondaryEmail).toBe('Other Email');
+    expect(suggestMapping('contacts', headers)).not.toHaveProperty('secondaryEmail');
+  });
+
   it('uses each column once and ignores unknown ones', () => {
     expect(suggestMapping('contacts', ['Name', 'Mobile', 'Favourite colour'])).toEqual({
       fullName: 'Name',

@@ -10,7 +10,16 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { day, e164Check, id, lowercaseEmailCheck, money, timestamps, tstz } from './_columns.ts';
+import {
+  day,
+  e164Check,
+  emailFormatCheck,
+  id,
+  lowercaseEmailCheck,
+  money,
+  timestamps,
+  tstz,
+} from './_columns.ts';
 import { companies, contacts } from './contacts.ts';
 import { hardwareBatteries, hardwareInverters, hardwarePanels } from './hardware.ts';
 import { sheetSyncSources } from './imports.ts';
@@ -43,6 +52,8 @@ export const leads = pgTable(
     firstName: text().notNull(),
     lastName: text(),
     email: text(),
+    /** A second address for the same customer (e.g. personal + work). */
+    secondaryEmail: text(),
     mobile: text(),
     secondaryMobile: text(),
     managerRenteeFirstName: text(),
@@ -96,6 +107,8 @@ export const leads = pgTable(
       .on(t.sheetSourceId, t.sheetLeadId)
       .where(sql`${t.sheetSourceId} is not null`),
     check('leads_email_lowercase', lowercaseEmailCheck(t.email)),
+    check('leads_secondary_email_lowercase', lowercaseEmailCheck(t.secondaryEmail)),
+    check('leads_secondary_email_format', emailFormatCheck(t.secondaryEmail)),
     check('leads_mobile_e164', e164Check(t.mobile)),
     check('leads_secondary_mobile_e164', e164Check(t.secondaryMobile)),
   ],
