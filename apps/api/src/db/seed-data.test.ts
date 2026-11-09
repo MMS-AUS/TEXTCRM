@@ -88,4 +88,19 @@ describe('legacy reference files', () => {
     expect(hw.inverters).toHaveLength(854);
     expect(hw.batteries).toHaveLength(427);
   });
+
+  it('offers Warehouse as its own contact type, after the original six', async () => {
+    const lists = buildOptionLists((await loadLegacySeedInput()).dropdowns);
+    const contactTypes = lists.find((l) => l.key === 'contactTypes')?.options ?? [];
+    expect(contactTypes.map((o) => o.value)).toEqual([
+      'Residential',
+      'Commercial',
+      'Subcontractor',
+      'Vendor',
+      'Government / Council',
+      'Partner',
+      'Warehouse',
+    ]);
+    expect(contactTypes.at(-1)?.sortOrder).toBe(70);
+  });
 });

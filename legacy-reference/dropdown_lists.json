@@ -141,7 +141,8 @@
     "Subcontractor",
     "Vendor",
     "Government / Council",
-    "Partner"
+    "Partner",
+    "Warehouse"
   ],
   "companyTypes": [
     "Commercial Customer",
