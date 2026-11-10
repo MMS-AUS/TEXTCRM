@@ -174,6 +174,43 @@ export function suggestMapping(target: ImportTarget, headers: readonly string[])
   return mapping;
 }
 
+// ── Download templates ───────────────────────────────────────────────────
+
+/** The headings of a target's downloadable template: one column per field, in field order. */
+export const templateHeaders = (target: ImportTarget): string[] =>
+  IMPORT_FIELDS[target].map((importField) => importField.label);
+
+/** Every field mapped to its own template heading. */
+const fullTemplateMapping = (target: ImportTarget): Record<string, string> =>
+  Object.fromEntries(IMPORT_FIELDS[target].map((f) => [f.key, f.label]));
+
+/**
+ * The complete mapping when a sheet's headings are exactly the template's (in any order, no
+ * extra or missing columns); null otherwise, and the user matches columns by hand.
+ */
+export function templateMapping(
+  target: ImportTarget,
+  headers: readonly string[],
+): Record<string, string> | null {
+  const expected = templateHeaders(target);
+  const given = new Set(headers);
+  if (headers.length !== expected.length || given.size !== headers.length) return null;
+  return expected.every((heading) => given.has(heading)) ? fullTemplateMapping(target) : null;
+}
+
+/** Whether a saved mapping is the template's own (every field to its template heading). */
+export function isTemplateMapping(
+  target: ImportTarget,
+  mapping: Record<string, string> | null | undefined,
+): boolean {
+  if (!mapping) return false;
+  const full = fullTemplateMapping(target);
+  const keys = Object.keys(mapping);
+  return keys.length === Object.keys(full).length && keys.every((k) => mapping[k] === full[k]);
+}
+
+export const importTemplateRequestSchema = z.object({ target: z.enum(IMPORT_TARGETS) });
+
 export const columnMappingSchema = z
   .record(z.string().max(50), z.string().trim().min(1).max(200))
   .refine((mapping) => Object.keys(mapping).length <= 60, 'Too many columns.');

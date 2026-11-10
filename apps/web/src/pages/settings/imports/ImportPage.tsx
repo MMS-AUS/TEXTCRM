@@ -3,6 +3,7 @@ import {
   IMPORT_FIELDS,
   IMPORT_ROWS_PAGE_SIZE,
   isHardwareTarget,
+  isTemplateMapping,
   mappingProblems,
   type ImportAction,
   type ImportTarget,
@@ -145,7 +146,43 @@ function MappingForm({ job, source }: { job: Job; source: Source }) {
   );
 }
 
+/** A file made from the template was matched and previewed on upload; matching stays optional. */
+function TemplateMatched({ job, onChange }: { job: Job; onChange: () => void }) {
+  return (
+    <Card>
+      <CardHeader
+        actions={
+          <Button size="sm" onClick={onChange}>
+            Change column matching
+          </Button>
+        }
+      >
+        <CardTitle>1 · Columns matched</CardTitle>
+        <CardDescription>
+          The headings match the {TARGET_LABELS[job.target].toLowerCase()} template, so every column
+          was matched for you.
+        </CardDescription>
+      </CardHeader>
+    </Card>
+  );
+}
+
 function MappingStep({ job }: { job: Job }) {
+  const [matching, setMatching] = useState(false);
+  if (!matching && job.status === 'previewed' && isTemplateMapping(job.target, job.mapping)) {
+    return (
+      <TemplateMatched
+        job={job}
+        onChange={() => {
+          setMatching(true);
+        }}
+      />
+    );
+  }
+  return <MappingLoader job={job} />;
+}
+
+function MappingLoader({ job }: { job: Job }) {
   const trpc = useTRPC();
   const source = useQuery({
     ...trpc.imports.source.queryOptions({ id: job.id }),

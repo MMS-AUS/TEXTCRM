@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  IMPORT_TARGETS,
+  isTemplateMapping,
   mappingProblems,
   mapRow,
   matchOption,
@@ -7,6 +9,8 @@ import {
   parseYesNo,
   splitFullName,
   suggestMapping,
+  templateHeaders,
+  templateMapping,
 } from './imports.ts';
 
 describe('suggestMapping', () => {
@@ -54,6 +58,42 @@ describe('suggestMapping', () => {
       fullName: 'Name',
       mobile: 'Mobile',
     });
+  });
+});
+
+describe('templates', () => {
+  it('has one heading per field, matched in full whatever the column order', () => {
+    const headers = templateHeaders('leads');
+    expect(headers).toContain('Secondary Email');
+    expect(new Set(headers).size).toBe(headers.length);
+    const mapping = templateMapping('leads', [...headers].reverse());
+    expect(mapping).toMatchObject({ firstName: 'First Name', mobile: 'Primary Mobile' });
+    expect(Object.keys(mapping ?? {})).toHaveLength(headers.length);
+    expect(mappingProblems('leads', mapping ?? {})).toEqual([]);
+    expect(isTemplateMapping('leads', mapping)).toBe(true);
+  });
+
+  it('every target template maps cleanly', () => {
+    for (const target of IMPORT_TARGETS) {
+      const mapping = templateMapping(target, templateHeaders(target));
+      expect(mapping && mappingProblems(target, mapping)).toEqual([]);
+    }
+  });
+
+  it('needs exactly the template headings — no missing, extra or renamed columns', () => {
+    const headers = templateHeaders('contacts');
+    expect(templateMapping('contacts', headers.slice(1))).toBeNull();
+    expect(templateMapping('contacts', [...headers, 'Favourite colour'])).toBeNull();
+    expect(
+      templateMapping(
+        'contacts',
+        headers.map((h) => h.toUpperCase()),
+      ),
+    ).toBeNull();
+    expect(templateMapping('leads', headers)).toBeNull();
+    expect(isTemplateMapping('leads', { firstName: 'First Name', mobile: 'Primary Mobile' })).toBe(
+      false,
+    );
   });
 });
 

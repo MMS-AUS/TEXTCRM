@@ -1,6 +1,11 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { emptyPermissionMatrix, type ImportTarget, type PermissionMatrix } from '@mms/shared';
+import {
+  emptyPermissionMatrix,
+  templateHeaders,
+  type ImportTarget,
+  type PermissionMatrix,
+} from '@mms/shared';
 import {
   activities,
   auditLog,
@@ -180,6 +185,51 @@ describe('imports (Step 3.2)', () => {
       sellingPriceAud: 'Selling Price AUD',
       notes: 'Sales Notes',
     });
+  });
+
+  it('a file with the template headings skips column matching and is previewed at once', async () => {
+    const headers = templateHeaders('leads').reverse();
+    const row = (values: Record<string, string>) => headers.map((h) => values[h] ?? '');
+    const result = await upload([
+      headers,
+      row({
+        'Full Name': 'Mia Chen',
+        'Primary Mobile': '412345678',
+        'Secondary Email': 'mia@work.example',
+        Postcode: '2150',
+      }),
+    ]);
+    expect(result.matchedTemplate).toBe(true);
+    const job = await as().imports.get({ id: result.id });
+    expect(job.status).toBe('previewed');
+    expect(job.counts.create).toBe(1);
+    expect(job.mapping).toMatchObject({ fullName: 'Full Name', secondaryEmail: 'Secondary Email' });
+    await as().imports.start({ id: result.id });
+    await runImport(db, result.id);
+    const [lead] = await liveLeads();
+    expect(lead).toMatchObject({
+      firstName: 'Mia',
+      lastName: 'Chen',
+      mobile: '+61412345678',
+      secondaryEmail: 'mia@work.example',
+    });
+  });
+
+  it('other layouts stay on column matching', async () => {
+    const result = await upload(HISTORIC);
+    expect(result.matchedTemplate).toBe(false);
+    expect((await as().imports.get({ id: result.id })).status).toBe('ready');
+  });
+
+  it('offers the template only for targets the user can import', async () => {
+    const template = await as().imports.template({ target: 'contacts' });
+    expect(template.fileName).toMatch(/contacts.*\.xlsx$/);
+    expect(template.base64.length).toBeGreaterThan(100);
+    const leadsOnly = emptyPermissionMatrix();
+    leadsOnly.leads = { view: true, create: true, edit: true, delete: false, export: false };
+    await expect(as(leadsOnly).imports.template({ target: 'panels' })).rejects.toThrow(
+      /does not allow/,
+    );
   });
 
   it('previews every row without changing the CRM, then the job does exactly that', async () => {

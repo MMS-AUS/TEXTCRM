@@ -25,7 +25,17 @@ export function putWithProgress(
 
 /** Saves text the API produced (e.g. a CSV report) as a file in the browser. */
 export function downloadText(text: string, fileName: string, type = 'text/csv;charset=utf-8') {
-  const url = URL.createObjectURL(new Blob([text], { type }));
+  saveBlob(new Blob([text], { type }), fileName);
+}
+
+/** Saves a binary file the API sent as base64 (e.g. an Excel template). */
+export function downloadBase64(base64: string, fileName: string, type: string) {
+  const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+  saveBlob(new Blob([bytes], { type }), fileName);
+}
+
+function saveBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = fileName;

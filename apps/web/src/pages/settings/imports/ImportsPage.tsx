@@ -1,12 +1,12 @@
-import { MAX_IMPORT_BYTES, formatBytes, type ImportTarget } from '@mms/shared';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { IMPORT_FILE_TYPES, MAX_IMPORT_BYTES, formatBytes, type ImportTarget } from '@mms/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { FileSpreadsheet, Sheet, Upload } from 'lucide-react';
+import { Download, FileSpreadsheet, Sheet, Upload } from 'lucide-react';
 import { useRef, useState, type DragEvent } from 'react';
 import { PageHeader } from '../../../components/PageHeader.tsx';
 import { errorMessage } from '../../../lib/errors.ts';
 import { useTRPC, type RouterOutputs } from '../../../lib/trpc.ts';
-import { putWithProgress } from '../../../lib/upload.ts';
+import { downloadBase64, putWithProgress } from '../../../lib/upload.ts';
 import {
   Alert,
   Badge,
@@ -32,12 +32,46 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  toast,
 } from '../../../ui/index.ts';
 import { SettingsBackLink } from '../SettingsPage.tsx';
 import { STATUS_LABELS, STATUS_TONES, TARGET_LABELS } from './import-labels.ts';
 import { When } from '../../../components/When.tsx';
 
 type Setup = RouterOutputs['imports']['setup'];
+
+/** An empty Excel file with this target's columns; filled in, it skips column matching. */
+function TemplateButton({ target }: { target: ImportTarget }) {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      loading={busy}
+      onClick={() => {
+        setBusy(true);
+        queryClient
+          .query({ ...trpc.imports.template.queryOptions({ target }), staleTime: 0 })
+          .then((file) => {
+            downloadBase64(file.base64, file.fileName, IMPORT_FILE_TYPES.xlsx);
+          })
+          .catch((error: unknown) => {
+            toast({
+              title: "Couldn't make the template",
+              description: errorMessage(error),
+              tone: 'danger',
+            });
+          })
+          .finally(() => {
+            setBusy(false);
+          });
+      }}
+    >
+      <Download />
+      Download template
+    </Button>
+  );
+}
 
 function UploadSource({ target, enabled }: { target: ImportTarget; enabled: boolean }) {
   const trpc = useTRPC();
@@ -118,17 +152,24 @@ function UploadSource({ target, enabled }: { target: ImportTarget; enabled: bool
             CSV or Excel (.xlsx) · up to {formatBytes(MAX_IMPORT_BYTES)} · the first row must be the
             column headings
           </p>
+          <p className="text-fg-muted">
+            Filled in the template? Its columns are matched for you and you go straight to the
+            preview.
+          </p>
         </div>
-        <Button
-          variant="primary"
-          disabled={progress !== null}
-          onClick={() => {
-            inputRef.current?.click();
-          }}
-        >
-          <FileSpreadsheet />
-          Choose file
-        </Button>
+        <div className="flex flex-wrap justify-center gap-2">
+          <TemplateButton target={target} />
+          <Button
+            variant="primary"
+            disabled={progress !== null}
+            onClick={() => {
+              inputRef.current?.click();
+            }}
+          >
+            <FileSpreadsheet />
+            Choose file
+          </Button>
+        </div>
         <input
           ref={inputRef}
           type="file"

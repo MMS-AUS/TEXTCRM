@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { IMPORT_FIELDS } from '@mms/shared';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { fakeAuth, fullAccessProfile, renderPage, type TrpcCall } from '../../../test/render.tsx';
 import { ImportPage } from './ImportPage.tsx';
 import { ImportsPage } from './ImportsPage.tsx';
@@ -103,6 +104,69 @@ describe('import wizard', () => {
       fileName: 'history.csv',
       sizeBytes: file.size,
     });
+  });
+
+  it('downloads the Excel template for the chosen target', async () => {
+    const calls: TrpcCall[] = [];
+    const saved: Blob[] = [];
+    // jsdom doesn't define these, so they are added for this test and removed afterwards.
+    URL.createObjectURL = (blob: Blob) => {
+      saved.push(blob);
+      return 'blob:template';
+    };
+    URL.revokeObjectURL = () => undefined;
+    onTestFinished(() => {
+      Reflect.deleteProperty(URL, 'createObjectURL');
+      Reflect.deleteProperty(URL, 'revokeObjectURL');
+    });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    renderPage(<ImportsPage />, {
+      path: '/settings/imports/',
+      auth: signedIn(),
+      calls,
+      responses: {
+        'imports.setup': {
+          targets: ['leads'],
+          uploadsEnabled: true,
+          googleSheets: null,
+          jobsEnabled: true,
+        },
+        'imports.list': [],
+        'imports.template': { fileName: 'leads template.xlsx', base64: btoa('PK-bytes') },
+      },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: /Download template/ }));
+    await waitFor(() => {
+      expect(saved).toHaveLength(1);
+    });
+    expect(calls.find((c) => c.path === 'imports.template')?.input).toEqual({ target: 'leads' });
+    expect(saved[0]?.type).toBe(
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    expect(click).toHaveBeenCalled();
+    click.mockRestore();
+  });
+
+  it('skips column matching for a file made from the template', async () => {
+    const mapping = Object.fromEntries(
+      IMPORT_FIELDS.leads.map((field) => [field.key, field.label]),
+    );
+    renderPage(<ImportPage />, {
+      path: '/settings/imports/$importId',
+      url: `/settings/imports/${id}`,
+      auth: signedIn(),
+      responses: {
+        'imports.get': job({
+          status: 'previewed',
+          mapping,
+          counts: { create: 1, update: 0, skip: 0, error: 0 },
+        }),
+        'imports.rows': { total: 0, rows: [] },
+      },
+    });
+    expect(await screen.findByText('1 · Columns matched')).toBeDefined();
+    expect(screen.queryByText('1 · Match the columns')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Import 1 row' })).toBeDefined();
   });
 
   it('refuses other file types before uploading', async () => {

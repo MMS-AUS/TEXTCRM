@@ -11,10 +11,12 @@ import {
   importRowsInputSchema,
   importSheetRequestSchema,
   importTabSchema,
+  importTemplateRequestSchema,
   importUploadRequestSchema,
   MAX_IMPORT_BYTES,
   mappingProblems,
   suggestMapping,
+  templateMapping,
   type ImportTarget,
 } from '@mms/shared';
 import type { AuthUser } from '../../auth/types.ts';
@@ -29,6 +31,7 @@ import { requireJobs } from '../jobs/router.ts';
 import { parseSpreadsheetId, SheetAccessError, type SheetsReader } from './google-sheets.ts';
 import { ImportFileError, readUpload, toTable, type Table } from './parse.ts';
 import { errorReportCsv, previewImport } from './service.ts';
+import { buildImportTemplate } from './template.ts';
 
 // Settings → Import (Step 3.2): upload a CSV/XLSX file or read a Google Sheet, map its columns,
 // preview what every row will do, then run it as a background job.
@@ -142,6 +145,17 @@ async function markReady(db: Db, job: ImportJob, tab: string | null, table: Tabl
   }
 }
 
+/**
+ * A sheet laid out exactly like the downloadable template needs no column matching: it is
+ * previewed straight away. Any other layout stays on the mapping step.
+ */
+async function previewIfTemplate(db: Db, job: ImportJob, table: Table): Promise<boolean> {
+  const mapping = templateMapping(job.target as ImportTarget, table.headers);
+  if (!mapping) return false;
+  await previewImport(db, job, table, mapping);
+  return true;
+}
+
 function summary(job: ImportJob, creator: string | null) {
   return {
     id: job.id,
@@ -239,7 +253,7 @@ export const importsRouter = router({
     }
     const { tab, table } = await readSource(ctx, job);
     await markReady(ctx.db, job, tab, table);
-    return { id: job.id };
+    return { id: job.id, matchedTemplate: await previewIfTemplate(ctx.db, job, table) };
   }),
 
   /** Step 1 (Google): reads a sheet shared with the service account. */
@@ -273,8 +287,14 @@ export const importsRouter = router({
         .returning();
       if (!job) throw new Error('Insert returned no row');
       await markReady(ctx.db, job, tab, table);
-      return { id: job.id };
+      return { id: job.id, matchedTemplate: await previewIfTemplate(ctx.db, job, table) };
     }),
+
+  /** An empty Excel workbook whose headings are exactly this target's fields. */
+  template: protectedProcedure.input(importTemplateRequestSchema).query(({ ctx, input }) => {
+    assertCanImport(ctx.user, input.target);
+    return buildImportTemplate(input.target);
+  }),
 
   /** Step 2 data: tabs, headers, a few sample rows and the suggested (or saved) mapping. */
   source: protectedProcedure.input(importIdSchema).query(async ({ ctx, input }) => {
