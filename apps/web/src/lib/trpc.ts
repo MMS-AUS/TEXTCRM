@@ -10,11 +10,12 @@ export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 export function createApiClient(
   getIdToken: () => Promise<string | null>,
   fetchImpl?: typeof fetch,
+  apiUrl?: string,
 ) {
   return createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
-        url: '/api/trpc',
+        url: `${apiUrl?.replace(/\/+$/, '') ?? ''}/api/trpc`,
         ...(fetchImpl ? { fetch: fetchImpl } : {}),
         async headers() {
           const token = await getIdToken();

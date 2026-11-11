@@ -17,6 +17,8 @@ function createServices() {
   const firebaseAuth = createFirebaseAuth(config.env);
   const apiClient = createApiClient(
     async () => (await firebaseAuth.currentUser?.getIdToken()) ?? null,
+    undefined,
+    config.env.VITE_API_URL,
   );
   return { firebaseAuth, apiClient, allowedDomain: config.env.VITE_ALLOWED_EMAIL_DOMAIN };
 }
