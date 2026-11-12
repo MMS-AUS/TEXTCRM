@@ -1,9 +1,7 @@
 import { FirebaseError } from 'firebase/app';
 import {
-  getRedirectResult,
   onAuthStateChanged,
   signInWithPopup,
-  signInWithRedirect,
   signOut as firebaseSignOut,
   type Auth,
 } from 'firebase/auth';
@@ -14,17 +12,6 @@ import { AuthContext, type AuthContextValue, type AuthState } from './auth-conte
 
 const SERVER_UNREACHABLE = 'Could not reach the CRM server. Check your connection and try again.';
 const SESSION_EXPIRED = 'Your session has expired. Please sign in again.';
-
-/**
- * VITE_AUTH_MODE=popup uses the Google pop-up; anything else (including unset) uses a full-page
- * redirect, which works on hosts that send a Cross-Origin-Opener-Policy that blocks pop-ups.
- */
-const AUTH_MODE: 'popup' | 'redirect' =
-  String(import.meta.env.VITE_AUTH_MODE ?? '')
-    .trim()
-    .toLowerCase() === 'popup'
-    ? 'popup'
-    : 'redirect';
 
 const POPUP_ERRORS: Record<string, string> = {
   'auth/popup-blocked':
@@ -90,28 +77,9 @@ export function AuthProvider({
     [auth, apiClient, endSession],
   );
 
-  // Back from Google after a redirect: onAuthStateChanged signs the person in; this only
-  // surfaces a failed attempt (e.g. an unauthorised domain) that would otherwise be silent.
-  useEffect(() => {
-    if (AUTH_MODE !== 'redirect') return;
-    getRedirectResult(auth).catch((error: unknown) => {
-      const code = error instanceof FirebaseError ? error.code : '';
-      console.error('Google sign-in failed', error);
-      setState({
-        status: 'signedOut',
-        message: POPUP_ERRORS[code] ?? 'Sign-in failed. Please try again.',
-      });
-    });
-  }, [auth]);
-
   const signInWithGoogle = useCallback(async () => {
     try {
-      const provider = workspaceGoogleProvider(allowedDomain);
-      if (AUTH_MODE === 'redirect') {
-        await signInWithRedirect(auth, provider); // leaves the page; the result is read on return
-        return;
-      }
-      await signInWithPopup(auth, provider);
+      await signInWithPopup(auth, workspaceGoogleProvider(allowedDomain));
     } catch (error) {
       const code = error instanceof FirebaseError ? error.code : '';
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return;
