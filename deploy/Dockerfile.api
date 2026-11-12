@@ -1,0 +1,17 @@
+# One image for the API, the worker and the one-off CLI tasks (migrate, create user).
+# Node 26 runs the TypeScript sources directly, exactly as in development — no build step.
+FROM node:26-slim
+ENV NODE_ENV=production
+WORKDIR /app
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+RUN npm ci --omit=dev --workspace @mms/api --workspace @mms/shared --include-workspace-root=false
+COPY packages/shared packages/shared
+COPY apps/api apps/api
+# The seed script reads these two reference files.
+COPY legacy-reference/dropdown_lists.json legacy-reference/hardware_catalog.json legacy-reference/
+WORKDIR /app/apps/api
+USER node
+CMD ["node", "src/server.ts"]

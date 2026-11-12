@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+node_modules
+**/node_modules
+**/dist
+legacy-reference/*
+!legacy-reference/dropdown_lists.json
+!legacy-reference/hardware_catalog.json
+claude_code_CRM_SECRETS.md
+*.log
+deploy/.env*

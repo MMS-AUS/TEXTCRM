@@ -1,0 +1,21 @@
+# Builds the web app, then serves it with Caddy (which also proxies /api to the API and does HTTPS).
+FROM node:26-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json tsconfig.base.json ./
+COPY packages/shared/package.json packages/shared/
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+RUN npm ci --workspace @mms/web --workspace @mms/shared --include-workspace-root=false
+COPY packages/shared packages/shared
+COPY apps/web apps/web
+# VITE_* values are baked into the bundle at build time (they are public by design).
+ARG VITE_FIREBASE_API_KEY
+ARG VITE_FIREBASE_AUTH_DOMAIN
+ARG VITE_FIREBASE_PROJECT_ID
+ARG VITE_FIREBASE_APP_ID
+ARG VITE_ALLOWED_EMAIL_DOMAIN
+RUN npm run build -w @mms/web
+
+FROM caddy:2
+COPY --from=build /app/apps/web/dist /srv
+COPY deploy/Caddyfile /etc/caddy/Caddyfile

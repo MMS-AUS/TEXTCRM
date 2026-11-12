@@ -49,6 +49,8 @@ export function createApp(appDeps: AppDeps) {
   };
   const app = express();
   app.disable('x-powered-by');
+  // Behind the Caddy reverse proxy in production: trust its X-Forwarded-For so rate limits see the real client.
+  if (deps.config.NODE_ENV === 'production') app.set('trust proxy', 1);
 
   app.use(
     pinoHttp({

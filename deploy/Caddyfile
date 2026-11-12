@@ -1,0 +1,22 @@
+{$APP_HOST} {
+	encode zstd gzip
+
+	# Firebase's Google sign-in popup needs this.
+	header Cross-Origin-Opener-Policy same-origin-allow-popups
+
+	@api path /api/* /webhooks/* /oauth/*
+	handle @api {
+		reverse_proxy api:3000
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# Browsers upload and download files straight to object storage using presigned URLs.
+{$FILES_HOST} {
+	reverse_proxy storage:9000
+}

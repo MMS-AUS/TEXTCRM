@@ -1,0 +1,97 @@
+name: mmscrm-prod
+
+x-api: &api
+  build:
+    context: .
+    dockerfile: deploy/Dockerfile.api
+  env_file: .env
+  environment:
+    DATABASE_URL: postgres://crm:${POSTGRES_PASSWORD}@postgres:5432/crm
+    S3_ENDPOINT: https://${FILES_HOST}
+    S3_FORCE_PATH_STYLE: 'true'
+    NODE_ENV: production
+    PORT: '3000'
+  volumes:
+    - /srv/crm-secrets:/secrets:ro
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: crm
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U crm -d crm']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  storage:
+    image: rustfs/rustfs:1.0.4
+    restart: unless-stopped
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY_ID}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_ACCESS_KEY}
+      RUSTFS_OBS_LOG_DIRECTORY: ''
+    volumes:
+      - storagedata:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'nc -z localhost 9000']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    <<: *api
+    restart: 'no'
+    command: ['node', 'src/db/migrate.ts']
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    <<: *api
+    command: ['node', 'src/server.ts']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      storage: { condition: service_healthy }
+
+  worker:
+    <<: *api
+    command: ['node', 'src/worker.ts']
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+      args:
+        VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
+        VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
+        VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
+        VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
+        VITE_ALLOWED_EMAIL_DOMAIN: ${VITE_ALLOWED_EMAIL_DOMAIN}
+    restart: unless-stopped
+    environment:
+      APP_HOST: ${APP_HOST}
+      FILES_HOST: ${FILES_HOST}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  storagedata:
+  caddy_data:
+  caddy_config:
