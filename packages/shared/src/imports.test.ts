@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   IMPORT_TARGETS,
   isTemplateMapping,
+  IMPORT_FIELDS,
   mappingProblems,
   mapRow,
   matchOption,
@@ -39,6 +40,15 @@ describe('suggestMapping', () => {
       batteryRequired: 'Battery',
       notes: 'Comments',
     });
+  });
+
+  it('offers no fullName field: the full name is always built from first and last name', () => {
+    for (const target of ['leads', 'contacts'] as const) {
+      expect(IMPORT_FIELDS[target].map((f) => f.key)).not.toContain('fullName');
+    }
+    expect(mappingProblems('leads', { fullName: 'Name', email: 'Email' })).toContain(
+      '"fullName" is not a field you can import.',
+    );
   });
 
   it('has no Full Name, Secondary Email or Platform column to map', () => {
