@@ -71,6 +71,44 @@ describe('contacts', () => {
     await expect(duplicate).rejects.toThrow(/Olivia Nguyen already has this mobile/);
   });
 
+  it('keeps several emails as tags, and finds and de-duplicates on any of them', async () => {
+    const api = callerWith();
+    const { id } = await api.contacts.create({
+      ...olivia,
+      email: 'olivia@example.com liv@work.example',
+    });
+    const contact = await api.contacts.get({ id });
+    expect(contact).toMatchObject({
+      email: 'olivia@example.com',
+      extraEmails: ['liv@work.example'],
+    });
+
+    // Another contact can't reuse an extra email, in either position.
+    await expect(
+      api.contacts.create({ firstName: 'L', email: 'liv@work.example', type: 'Residential' }),
+    ).rejects.toThrow(/Olivia Nguyen already has this email/);
+    await expect(
+      api.contacts.create({
+        firstName: 'L',
+        email: 'new@example.com Liv@Work.example',
+        type: 'Residential',
+      }),
+    ).rejects.toThrow(/already has this email/);
+
+    // Search finds her by an extra email; editing keeps the tags and records the change.
+    const found = await api.contacts.list({ search: 'liv@work' });
+    expect(found.rows.map((row) => row.id)).toEqual([id]);
+    expect(found.rows[0]?.extraEmails).toEqual(['liv@work.example']);
+    await api.contacts.update({
+      id,
+      values: { ...olivia, email: 'olivia@example.com liv@work.example olivia@home.example' },
+    });
+    expect((await api.contacts.get({ id })).extraEmails).toEqual([
+      'liv@work.example',
+      'olivia@home.example',
+    ]);
+  });
+
   it('only accepts contact types from the option list', async () => {
     await expect(callerWith().contacts.create({ ...olivia, type: 'Alien' })).rejects.toMatchObject({
       code: 'BAD_REQUEST',

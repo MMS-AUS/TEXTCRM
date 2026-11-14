@@ -49,7 +49,12 @@ const PERSON_FIELDS = [
     'other phone',
     'alternate mobile',
   ]),
-  field('email', 'Email', ['email address', 'e-mail']),
+  field(
+    'email',
+    'Email',
+    ['email address', 'e-mail'],
+    'Several addresses can share a cell, separated by spaces — the first is primary',
+  ),
   field('streetAddress', 'Street Address', ['address', 'street', 'address line 1']),
   field('suburb', 'Suburb', ['city', 'town', 'locality']),
   field('state', 'State', []),
@@ -57,15 +62,6 @@ const PERSON_FIELDS = [
 ];
 
 /** §1.8 "Expected columns" — the old intake sheet's headers are recognised as-is. */
-const LEAD_PERSON_FIELDS = PERSON_FIELDS.map((personField) =>
-  personField.key === 'email'
-    ? {
-        ...personField,
-        hint: 'Several addresses can share a cell, separated by spaces — the first is primary',
-      }
-    : personField,
-);
-
 export const LEAD_IMPORT_FIELDS: readonly ImportField[] = [
   field(
     'sheetLeadId',
@@ -82,7 +78,7 @@ export const LEAD_IMPORT_FIELDS: readonly ImportField[] = [
     'Matched to a user by name or email',
   ),
   field('status', 'Status', ['lead status']),
-  ...LEAD_PERSON_FIELDS,
+  ...PERSON_FIELDS,
   field('systemSizeKw', 'System Size kW', ['system size', 'kw', 'system kw']),
   field('batteryRequired', 'Battery Required', ['battery'], 'Yes / No'),
   field('propertyType', 'Property Type', []),

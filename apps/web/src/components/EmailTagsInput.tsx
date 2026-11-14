@@ -13,7 +13,8 @@ function splitEmails(text: string): string[] {
 /**
  * Several email addresses in one box. Type an address and press Space (or Enter or comma) and it
  * becomes a tag; the first tag is the primary address, the rest are extra addresses. The value is
- * one space-separated string, which the server splits into primary + extras.
+ * one space-separated string, which the server splits into primary + extras. An address still
+ * being typed is part of the value too, so submitting the form never loses it.
  */
 export function EmailTagsInput({
   value,
@@ -28,13 +29,14 @@ export function EmailTagsInput({
   name?: string;
   props: FieldControlProps;
 }) {
-  const tags = splitEmails(value);
-  const [draft, setDraft] = useState('');
+  const all = splitEmails(value);
+  const [typed, setTyped] = useState('');
   const input = useRef<HTMLInputElement>(null);
-
-  const commit = (text: string) => {
-    const added = splitEmails(text);
-    if (added.length > 0) onChange([...tags, ...added].join(' '));
+  // The address being typed is the value's last word; drop it if the form changed the value.
+  const draft = typed !== '' && all.at(-1) === typed ? typed : '';
+  const tags = draft ? all.slice(0, -1) : all;
+  const emit = (committed: string[], pending: string) => {
+    onChange([...committed, pending].filter(Boolean).join(' '));
   };
 
   return (
@@ -83,28 +85,22 @@ export function EmailTagsInput({
         className="min-w-40 flex-1 bg-transparent px-1 outline-none placeholder:text-fg-subtle"
         onChange={(event) => {
           const text = event.target.value;
-          if (!SEPARATORS.test(text)) {
-            setDraft(text);
-            return;
-          }
           // A space, comma or semicolon (or a pasted list) finishes the address before it.
           const parts = text.split(SEPARATORS);
           const rest = parts.pop() ?? '';
-          commit(parts.join(' '));
-          setDraft(rest);
+          setTyped(rest);
+          emit([...tags, ...parts.filter(Boolean)], rest);
         }}
         onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
-          if (event.key === 'Enter' && draft.trim()) {
+          if (event.key === 'Enter' && draft) {
             event.preventDefault();
-            commit(draft);
-            setDraft('');
+            setTyped('');
           } else if (event.key === 'Backspace' && draft === '' && tags.length > 0) {
             onChange(tags.slice(0, -1).join(' '));
           }
         }}
         onBlur={() => {
-          if (draft.trim()) commit(draft);
-          setDraft('');
+          setTyped('');
           onBlur?.();
         }}
       />

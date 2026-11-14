@@ -25,6 +25,7 @@ import type { Db, Tx } from '../../db/client.ts';
 import { companies, contacts, users } from '../../db/schema/index.ts';
 import { permissionProcedure, router } from '../../trpc/trpc.ts';
 import { diff, entityHistory, recordAudit, type Actor } from '../audit.ts';
+import { extraEmailsLike } from '../emails.ts';
 import { assertOption } from '../options.ts';
 import { containsPattern, phoneContains } from '../search.ts';
 
@@ -60,6 +61,7 @@ function listWhere(input: ListInput): SQL | undefined {
     const matches = [
       ilike(companies.name, pattern),
       ilike(companies.email, pattern),
+      extraEmailsLike(companies.extraEmails, pattern),
       ilike(companies.suburb, pattern),
       /^\d{3,11}$/.test(abnDigits) ? ilike(companies.abn, containsPattern(abnDigits)) : undefined,
       phoneContains(companies.phone, input.search),
@@ -137,6 +139,7 @@ export const companiesRouter = router({
             abn: companies.abn,
             phone: companies.phone,
             email: companies.email,
+            extraEmails: companies.extraEmails,
             suburb: companies.suburb,
             state: companies.state,
             contacts: contactCount,
@@ -201,6 +204,7 @@ export const companiesRouter = router({
             firstName: contacts.firstName,
             lastName: contacts.lastName,
             email: contacts.email,
+            extraEmails: contacts.extraEmails,
             mobile: contacts.mobile,
             type: contacts.type,
           })

@@ -50,6 +50,11 @@ export const emailList = z
     return [...seen];
   });
 
+/** The first address is the primary email; the others are kept as extra emails. */
+export function splitPrimaryEmail<T extends { email: string[] }>({ email, ...rest }: T) {
+  return { ...rest, email: email[0] ?? null, extraEmails: email.slice(1) };
+}
+
 /** Any common Australian format in, E.164 out. */
 export const optionalPhone = z
   .string()
@@ -78,7 +83,8 @@ export const contactInputSchema = z
   .object({
     firstName: z.string().trim().min(1, 'Enter a first name.').max(100),
     lastName: optionalText(100),
-    email: optionalEmail,
+    /** One box, several addresses separated by spaces: the first is primary, the rest are tags. */
+    email: emailList,
     mobile: optionalPhone,
     secondaryMobile: optionalPhone,
     /** Option value from the `contactTypes` list. */
@@ -87,14 +93,15 @@ export const contactInputSchema = z
     notes: optionalText(5000),
   })
   .superRefine((contact, ctx) => {
-    if (!contact.mobile && !contact.email) {
+    if (!contact.mobile && contact.email.length === 0) {
       ctx.addIssue({
         code: 'custom',
         path: ['mobile'],
         message: 'Enter a mobile or an email so the contact can be reached.',
       });
     }
-  });
+  })
+  .transform(splitPrimaryEmail);
 
 export type ContactInput = z.input<typeof contactInputSchema>;
 export type ContactValues = z.output<typeof contactInputSchema>;
@@ -180,20 +187,23 @@ const optionalPostcode = z
     return value;
   });
 
-export const companyInputSchema = z.object({
-  name: z.string().trim().min(1, 'Enter the company name.').max(200),
-  /** Option value from the `companyTypes` list. */
-  type: optionalText(100),
-  abn: optionalAbn,
-  phone: optionalPhone,
-  email: optionalEmail,
-  website: optionalWebsite,
-  streetAddress: optionalText(200),
-  suburb: optionalText(100),
-  state: optionalState,
-  postcode: optionalPostcode,
-  notes: optionalText(5000),
-});
+export const companyInputSchema = z
+  .object({
+    name: z.string().trim().min(1, 'Enter the company name.').max(200),
+    /** Option value from the `companyTypes` list. */
+    type: optionalText(100),
+    abn: optionalAbn,
+    phone: optionalPhone,
+    /** One box, several addresses separated by spaces: the first is primary, the rest are tags. */
+    email: emailList,
+    website: optionalWebsite,
+    streetAddress: optionalText(200),
+    suburb: optionalText(100),
+    state: optionalState,
+    postcode: optionalPostcode,
+    notes: optionalText(5000),
+  })
+  .transform(splitPrimaryEmail);
 
 export type CompanyInput = z.input<typeof companyInputSchema>;
 export type CompanyValues = z.output<typeof companyInputSchema>;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AU_STATES, stateForPostcode } from './au.ts';
-import { emailList, optionalPhone, optionalText } from './contacts.ts';
+import { emailList, optionalPhone, optionalText, splitPrimaryEmail } from './contacts.ts';
 
 /** The business runs on Sydney/Brisbane time; "today" for lead dates means today there. */
 export const BUSINESS_TIME_ZONE = 'Australia/Sydney';
@@ -81,11 +81,7 @@ export const leadInputSchema = z
       });
     }
   })
-  .transform(({ email, ...lead }) => ({
-    ...lead,
-    email: email[0] ?? null,
-    extraEmails: email.slice(1),
-  }));
+  .transform(splitPrimaryEmail);
 
 export type LeadInput = z.input<typeof leadInputSchema>;
 export type LeadValues = z.output<typeof leadInputSchema>;

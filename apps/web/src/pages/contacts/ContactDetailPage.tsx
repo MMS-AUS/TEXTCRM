@@ -24,6 +24,7 @@ import { useState, type ReactNode } from 'react';
 import { ComposeButtons } from '../../components/messaging/ComposeDialogs.tsx';
 import { MessagesPanel } from '../../components/messaging/MessagesPanel.tsx';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
+import { EmailLinks } from '../../components/EmailLinks.tsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
 import { FilesPanel } from '../../components/FilesPanel.tsx';
@@ -410,14 +411,7 @@ function ContactView({ contact }: { contact: Contact }) {
                   { label: 'Other phone', value: formatPhone(contact.secondaryMobile) },
                   {
                     label: 'Email',
-                    value: contact.email && (
-                      <a
-                        href={`mailto:${contact.email}`}
-                        className="hover:text-accent-text hover:underline"
-                      >
-                        {contact.email}
-                      </a>
-                    ),
+                    value: <EmailLinks email={contact.email} extraEmails={contact.extraEmails} />,
                   },
                   { label: 'Type', value: contact.type },
                   { label: 'Source', value: contact.source },

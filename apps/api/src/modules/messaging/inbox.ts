@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import type { ActivityEntityType } from '@mms/shared';
 import type { Db } from '../../db/client.ts';
 import {
@@ -25,6 +25,7 @@ import {
   gmailWatch,
   type GmailMessage,
 } from '../../integrations/gmail.ts';
+import { anyEmailMatches } from '../emails.ts';
 import { ProviderError } from '../../integrations/http.ts';
 import {
   freshTokens,
@@ -110,11 +111,16 @@ async function matchConversation(db: Db, mailboxUserId: string, message: GmailMe
 }
 
 /** A customer's address: their contact, else their most recent live lead. */
-async function matchAddress(db: Db, address: string): Promise<Target | null> {
+export async function matchAddress(db: Db, address: string): Promise<Target | null> {
   const [contact] = await db
     .select({ id: contacts.id })
     .from(contacts)
-    .where(and(eq(contacts.email, address), isNull(contacts.archivedAt)))
+    .where(
+      and(
+        anyEmailMatches(contacts.email, contacts.extraEmails, [address]),
+        isNull(contacts.archivedAt),
+      ),
+    )
     .orderBy(desc(contacts.updatedAt))
     .limit(1);
   if (contact) {
@@ -123,12 +129,7 @@ async function matchAddress(db: Db, address: string): Promise<Target | null> {
   const [lead] = await db
     .select({ id: leads.id, contactId: leads.contactId })
     .from(leads)
-    .where(
-      and(
-        or(eq(leads.email, address), sql`${address} = any(${leads.extraEmails})`),
-        isNull(leads.deletedAt),
-      ),
-    )
+    .where(and(anyEmailMatches(leads.email, leads.extraEmails, [address]), isNull(leads.deletedAt)))
     .orderBy(desc(leads.updatedAt))
     .limit(1);
   if (lead) {

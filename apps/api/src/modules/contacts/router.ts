@@ -38,6 +38,7 @@ import {
 } from '../../db/schema/index.ts';
 import { permissionProcedure, router } from '../../trpc/trpc.ts';
 import { diff, entityHistory, recordAudit, type Actor } from '../audit.ts';
+import { anyEmailMatches, extraEmailsLike } from '../emails.ts';
 import { assertOption } from '../options.ts';
 import { containsPattern, phoneContains } from '../search.ts';
 
@@ -64,6 +65,7 @@ function listWhere(input: ListInput): SQL | undefined {
     const matches = [
       sql`(${contacts.firstName} || ' ' || coalesce(${contacts.lastName}, '')) ilike ${pattern}`,
       ilike(contacts.email, pattern),
+      extraEmailsLike(contacts.extraEmails, pattern),
       ilike(companies.name, pattern),
       ilike(contactAddresses.suburb, pattern),
       phoneContains(contacts.mobile, input.search),
@@ -98,13 +100,19 @@ function listOrder(sort: ListInput['sort']): SQL[] {
 
 /** Another active contact with the same email or mobile (§1.4 duplicate rules). */
 async function assertNotDuplicate(db: Db | Tx, values: ContactValues, excludeId?: string) {
+  const emails = [values.email, ...values.extraEmails];
   const sameDetails = or(
-    values.email ? eq(contacts.email, values.email) : undefined,
+    anyEmailMatches(contacts.email, contacts.extraEmails, emails),
     values.mobile ? eq(contacts.mobile, values.mobile) : undefined,
   );
   if (!sameDetails) return;
   const [duplicate] = await db
-    .select({ firstName: contacts.firstName, lastName: contacts.lastName, email: contacts.email })
+    .select({
+      firstName: contacts.firstName,
+      lastName: contacts.lastName,
+      email: contacts.email,
+      extraEmails: contacts.extraEmails,
+    })
     .from(contacts)
     .where(
       and(
@@ -116,7 +124,8 @@ async function assertNotDuplicate(db: Db | Tx, values: ContactValues, excludeId?
     .limit(1);
   if (duplicate) {
     const name = [duplicate.firstName, duplicate.lastName].filter(Boolean).join(' ');
-    const field = values.email && duplicate.email === values.email ? 'email' : 'mobile';
+    const theirs = [duplicate.email, ...duplicate.extraEmails];
+    const field = emails.some((email) => email && theirs.includes(email)) ? 'email' : 'mobile';
     throw new TRPCError({
       code: 'CONFLICT',
       message: `${name} already has this ${field}. Search for them instead of adding a duplicate.`,
@@ -185,6 +194,7 @@ export const contactsRouter = router({
             firstName: contacts.firstName,
             lastName: contacts.lastName,
             email: contacts.email,
+            extraEmails: contacts.extraEmails,
             mobile: contacts.mobile,
             type: contacts.type,
             companyId: companies.id,

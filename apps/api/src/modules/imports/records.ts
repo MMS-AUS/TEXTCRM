@@ -1,4 +1,4 @@
-import { and, eq, isNull, ne } from 'drizzle-orm';
+import { and, eq, isNull, ne, sql } from 'drizzle-orm';
 import type { AU_STATES } from '@mms/shared';
 import {
   areaForPostcode,
@@ -477,7 +477,14 @@ async function takenBy(db: Db | Tx, field: 'email' | 'mobile', value: string, ex
 
 export type ContactPlan =
   | { action: 'create' }
-  | { action: 'update'; contactId: string; fill: Record<string, string>; addAddress: boolean }
+  | {
+      action: 'update';
+      contactId: string;
+      fill: Record<string, string>;
+      /** Email addresses in the row that the contact doesn't have yet. */
+      newEmails: string[];
+      addAddress: boolean;
+    }
   | { action: 'skip'; contactId: string; message: string };
 
 /**
@@ -497,6 +504,12 @@ export async function planContact(db: Db | Tx, record: ContactRecord): Promise<C
       continue;
     fill[key] = value;
   }
+  const known = new Set([existing.email, ...existing.extraEmails]);
+  const given = [record.contact.email, ...record.contact.extraEmails].filter(
+    (email): email is string => Boolean(email) && !known.has(email),
+  );
+  // The row's first address fills an empty primary email; every other new one becomes a tag.
+  const newEmails = fill.email ? given.filter((email) => email !== fill.email) : given;
   let addAddress = false;
   if (record.address) {
     const addresses = await db
@@ -511,10 +524,10 @@ export async function planContact(db: Db | Tx, record: ContactRecord): Promise<C
       (a) => normaliseStreet(a.streetAddress) === street && a.postcode === record.address?.postcode,
     );
   }
-  if (Object.keys(fill).length === 0 && !addAddress) {
+  if (Object.keys(fill).length === 0 && newEmails.length === 0 && !addAddress) {
     return { action: 'skip', contactId: existing.id, message: 'Already in the CRM — nothing new.' };
   }
-  return { action: 'update', contactId: existing.id, fill, addAddress };
+  return { action: 'update', contactId: existing.id, fill, newEmails, addAddress };
 }
 
 async function addAddress(tx: Tx, contactId: string, address: AddressValues, primary: boolean) {
@@ -554,8 +567,21 @@ export async function applyContact(
     });
     return created.id;
   }
-  if (Object.keys(plan.fill).length) {
-    await tx.update(contacts).set(plan.fill).where(eq(contacts.id, plan.contactId));
+  if (Object.keys(plan.fill).length || plan.newEmails.length) {
+    await tx
+      .update(contacts)
+      .set({
+        ...plan.fill,
+        ...(plan.newEmails.length
+          ? {
+              extraEmails: sql`${contacts.extraEmails} || array[${sql.join(
+                plan.newEmails.map((email) => sql`${email}`),
+                sql`, `,
+              )}]::text[]`,
+            }
+          : {}),
+      })
+      .where(eq(contacts.id, plan.contactId));
   }
   if (plan.addAddress && record.address) {
     const [primary] = await tx
@@ -567,11 +593,15 @@ export async function applyContact(
     await addAddress(tx, plan.contactId, record.address, !primary);
   }
   await recordAudit(tx, origin.actor, {
-    action: plan.addAddress && Object.keys(plan.fill).length === 0 ? 'address_add' : 'update',
+    action:
+      plan.addAddress && Object.keys(plan.fill).length === 0 && plan.newEmails.length === 0
+        ? 'address_add'
+        : 'update',
     entityType: 'contact',
     entityId: plan.contactId,
     after: {
       ...plan.fill,
+      ...(plan.newEmails.length ? { extraEmailsAdded: plan.newEmails } : {}),
       ...(plan.addAddress && record.address ? { address: record.address.streetAddress } : {}),
     },
   });

@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { ComposeButtons } from '../../components/messaging/ComposeDialogs.tsx';
 import { MessagesPanel } from '../../components/messaging/MessagesPanel.tsx';
 import { ActivityTimeline } from '../../components/ActivityTimeline.tsx';
+import { EmailLinks } from '../../components/EmailLinks.tsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
 import { FilesPanel } from '../../components/FilesPanel.tsx';
@@ -334,25 +335,7 @@ function LeadView({ lead }: { lead: Lead }) {
                   { label: 'Other phone', value: formatPhone(lead.secondaryMobile) },
                   {
                     label: 'Email',
-                    value: lead.email && (
-                      <span className="flex flex-wrap items-center gap-1.5">
-                        <a
-                          href={`mailto:${lead.email}`}
-                          className="hover:text-accent-text hover:underline"
-                        >
-                          {lead.email}
-                        </a>
-                        {lead.extraEmails.map((address) => (
-                          <a
-                            key={address}
-                            href={`mailto:${address}`}
-                            className="rounded bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted hover:text-accent-text"
-                          >
-                            {address}
-                          </a>
-                        ))}
-                      </span>
-                    ),
+                    value: <EmailLinks email={lead.email} extraEmails={lead.extraEmails} />,
                   },
                   {
                     label: 'Address',

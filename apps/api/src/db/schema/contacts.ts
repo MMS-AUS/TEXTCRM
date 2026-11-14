@@ -15,6 +15,11 @@ export const companies = pgTable(
     abnVerified: boolean().notNull().default(false),
     phone: text(),
     email: text(),
+    /** Further addresses, typed after the primary one (shown as tags). */
+    extraEmails: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     website: text(),
     streetAddress: text(),
     suburb: text(),
@@ -47,6 +52,11 @@ export const contacts = pgTable(
     firstName: text().notNull(),
     lastName: text(),
     email: text(),
+    /** Further addresses, typed after the primary one (shown as tags). */
+    extraEmails: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     /** E.164, e.g. +61412345678. */
     mobile: text(),
     secondaryMobile: text(),

@@ -17,6 +17,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { errorMessage } from '../../lib/errors.ts';
 import { useOptions } from '../../lib/hooks.ts';
 import { useTRPC } from '../../lib/trpc.ts';
+import { EmailTagsInput } from '../../components/EmailTagsInput.tsx';
 import {
   Alert,
   Button,
@@ -39,6 +40,7 @@ export type EditableCompany = {
   abn: string | null;
   phone: string | null;
   email: string | null;
+  extraEmails: string[];
   website: string | null;
   streetAddress: string | null;
   suburb: string | null;
@@ -74,7 +76,7 @@ function CompanyForm({
       type: company?.type ?? '',
       abn: formatAbn(company?.abn),
       phone: formatPhone(company?.phone),
-      email: company?.email ?? '',
+      email: [company?.email, ...(company?.extraEmails ?? [])].filter(Boolean).join(' '),
       website: company?.website ?? '',
       streetAddress: company?.streetAddress ?? '',
       suburb: company?.suburb ?? '',
@@ -151,8 +153,22 @@ function CompanyForm({
         <FormField control={control} name="phone" label="Phone" className="sm:col-span-2">
           {(field, props) => <Input {...props} {...textInput(field)} type="tel" />}
         </FormField>
-        <FormField control={control} name="email" label="Email" className="sm:col-span-2">
-          {(field, props) => <Input {...props} {...textInput(field)} type="email" />}
+        <FormField
+          control={control}
+          name="email"
+          label="Email"
+          hint="Press Space to add another address. The first one is the primary."
+          className="sm:col-span-2"
+        >
+          {(field, props) => (
+            <EmailTagsInput
+              props={props}
+              name={field.name}
+              value={typeof field.value === 'string' ? field.value : ''}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
         </FormField>
         <FormField control={control} name="website" label="Website" className="sm:col-span-4">
           {(field, props) => (

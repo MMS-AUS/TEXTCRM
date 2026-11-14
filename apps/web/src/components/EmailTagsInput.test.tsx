@@ -31,11 +31,13 @@ describe('EmailTagsInput', () => {
     expect(screen.getByTitle('Extra email').textContent).toContain('b@work.example');
   });
 
-  it('keeps a half-typed address out of the value until it is finished or the box loses focus', () => {
+  it('keeps a half-typed address in the value, so submitting without leaving the box loses nothing', () => {
     render(<Harness />);
     typeInto('a@home.example');
-    expect(screen.getByTestId('value').textContent).toBe('');
+    expect(screen.getByTestId('value').textContent).toBe('a@home.example');
+    expect(screen.queryByTitle('Primary email')).toBeNull(); // not a tag until it is finished
     fireEvent.blur(screen.getByRole('textbox'));
+    expect(screen.getByTitle('Primary email').textContent).toContain('a@home.example');
     expect(screen.getByTestId('value').textContent).toBe('a@home.example');
   });
 

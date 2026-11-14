@@ -404,6 +404,30 @@ describe('imports (Step 3.2)', () => {
     expect(address).toMatchObject({ postcode: '0800', state: 'NT', isPrimary: true });
   });
 
+  it('adds the extra emails in a contact row to the contact already in the CRM', async () => {
+    const existing = await as().contacts.create({
+      firstName: 'Mia',
+      email: 'mia@home.example',
+      type: 'Residential',
+    });
+    const { result } = await importFile(
+      [
+        ['First Name', 'Email'],
+        ['Mia', 'MIA@home.example mia@work.example other@x.example'],
+        ['Ned', 'ned@x.example ned@y.example'],
+      ],
+      'contacts',
+    );
+    expect(result).toMatchObject({ create: 1, update: 1, error: 0 });
+    const [mia] = await db.select().from(contacts).where(eq(contacts.id, existing.id));
+    expect(mia).toMatchObject({
+      email: 'mia@home.example',
+      extraEmails: ['mia@work.example', 'other@x.example'],
+    });
+    const [ned] = await db.select().from(contacts).where(eq(contacts.firstName, 'Ned'));
+    expect(ned).toMatchObject({ email: 'ned@x.example', extraEmails: ['ned@y.example'] });
+  });
+
   it('reads a Google Sheet shared with the service account, any tab', async () => {
     const sheetId = '1mkYuqi8cuit0N2dPlraGi87OYwYFNK0Z55M3zlibu-c';
     sheets = fakeSheets({ [sheetId]: { Notes: [['just notes']], Leads: HISTORIC } });

@@ -75,7 +75,11 @@ async function linkedContact(db: Db | Tx, lead: Lead) {
       .where(eq(contacts.id, lead.contactId));
     if (contact && !contact.archivedAt) return contact;
   }
-  return findMatchingContact(db, { email: lead.email, mobile: lead.mobile });
+  return findMatchingContact(db, {
+    email: lead.email,
+    extraEmails: lead.extraEmails,
+    mobile: lead.mobile,
+  });
 }
 
 function projectTitle(systemSizeKw: string | null, battery: boolean): string {
@@ -188,6 +192,7 @@ export async function convertLead(
         firstName: lead.firstName,
         lastName: lead.lastName,
         email: lead.email,
+        extraEmails: lead.extraEmails,
         mobile: lead.mobile,
         secondaryMobile: lead.secondaryMobile,
         type: 'Residential',

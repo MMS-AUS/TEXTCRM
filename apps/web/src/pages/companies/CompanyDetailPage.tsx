@@ -14,6 +14,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import { useState } from 'react';
+import { EmailLinks } from '../../components/EmailLinks.tsx';
 import { ConfirmDialog } from '../../components/ConfirmDialog.tsx';
 import { DetailList } from '../../components/DetailList.tsx';
 import { FilesPanel } from '../../components/FilesPanel.tsx';
@@ -209,14 +210,7 @@ function CompanyView({ company }: { company: Company }) {
                 },
                 {
                   label: 'Email',
-                  value: company.email && (
-                    <a
-                      href={`mailto:${company.email}`}
-                      className="hover:text-accent-text hover:underline"
-                    >
-                      {company.email}
-                    </a>
-                  ),
+                  value: <EmailLinks email={company.email} extraEmails={company.extraEmails} />,
                 },
                 {
                   label: 'Website',

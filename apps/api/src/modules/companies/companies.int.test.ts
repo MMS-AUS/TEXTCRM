@@ -56,6 +56,24 @@ describe('companies', () => {
     });
   });
 
+  it('keeps several emails as tags and finds the company by any of them', async () => {
+    const { id } = await api().companies.create({
+      ...brightSolar,
+      email: 'Info@Bright.example accounts@bright.example',
+    });
+    expect(await api().companies.get({ id })).toMatchObject({
+      email: 'info@bright.example',
+      extraEmails: ['accounts@bright.example'],
+    });
+    const found = await api().companies.list({ search: 'accounts@bright' });
+    expect(found.rows.map((row) => row.id)).toEqual([id]);
+    await api().companies.update({
+      id,
+      values: { ...brightSolar, email: 'info@bright.example' },
+    });
+    expect((await api().companies.get({ id })).extraEmails).toEqual([]);
+  });
+
   it('rejects an invalid ABN and a second company with the same ABN', async () => {
     await expect(
       api().companies.create({ ...brightSolar, abn: '51 824 753 557' }),
