@@ -1,0 +1,45 @@
+name: Deploy to production
+
+# Manual only for now: Actions tab -> "Deploy to production" -> Run workflow.
+# The commit is checked (typecheck, lint, unit tests), then shipped to the VPS.
+# To deploy on every push later, add:  push: { branches: [main] }
+# No domain here on purpose: the host is the VPS_HOST secret (an IP), and the domain lives only in the
+# server's .env (APP_HOST / FILES_HOST) and the Caddyfile reads it from there.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck --if-present
+      - run: npm run lint --if-present
+      - run: npm test --if-present
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ship the commit to the VPS
+        env:
+          DEPLOY_KEY: ${{ secrets.VPS_DEPLOY_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_HOST_KEY: ${{ secrets.VPS_HOST_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_HOST_KEY" > ~/.ssh/known_hosts
+          git archive --format=tar HEAD | ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes \
+            "root@$VPS_HOST" "release ${GITHUB_SHA}"

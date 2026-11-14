@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Deploy script for the production VPS. Installed at /usr/local/bin/crm-deploy.
+#
+# GitHub Actions pipes `git archive HEAD` into this script over SSH. The deploy key is locked to this
+# command in /root/.ssh/authorized_keys, so it can do nothing else on the server.
+#
+# Steps: take the lock -> save the tarball -> back up the database -> sync the code into /opt/mmscrm
+# (never touching .env) -> rebuild and restart (the `migrate` service runs pending migrations first)
+# -> wait for /api/health -> report.
+set -euo pipefail
+
+APP=/opt/mmscrm
+PREV=/opt/mmscrm.prev
+STAGE=$(mktemp -d /tmp/crm-deploy.XXXXXX)
+trap 'rm -rf "$STAGE"' EXIT
+
+exec 9>/var/lock/crm-deploy.lock
+flock -n 9 || { echo "another deploy is running"; exit 1; }
+
+echo "== receiving release"
+tar -x -C "$STAGE"
+[ -f "$STAGE/docker-compose.prod.yml" ] || { echo "release is missing docker-compose.prod.yml"; exit 1; }
+echo "release: ${CRM_RELEASE:-${SSH_ORIGINAL_COMMAND:-unknown}}"
+
+echo "== database backup"
+/usr/local/bin/crm-backup
+
+echo "== syncing code"
+rm -rf "$PREV"; mkdir -p "$PREV"
+rsync -a --exclude .env "$APP"/ "$PREV"/
+rsync -a --delete --exclude .env --exclude legacy-reference "$STAGE"/ "$APP"/
+
+echo "== build + restart"
+cd "$APP"
+docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+
+echo "== waiting for health"
+for i in $(seq 1 30); do
+  if docker compose -f docker-compose.prod.yml exec -T api node -e "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+    echo "healthy after ~$((i*3))s"
+    docker image prune -f >/dev/null
+    echo "== deploy ok"
+    exit 0
+  fi
+  sleep 3
+done
+echo "== API did not become healthy; previous code is in $PREV"
+docker compose -f docker-compose.prod.yml logs --tail 40 migrate api
+exit 1
