@@ -12,11 +12,22 @@ type Values = Record<string, unknown>;
 
 function same(a: unknown, b: unknown): boolean {
   if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
-  // Lists (e.g. a lead's extra emails) are the same when they hold the same items in order.
+  // Lists (e.g. a lead's extra emails or inverter lines) are the same when they hold the same
+  // items in order; plain objects when every field is the same.
   if (Array.isArray(a) && Array.isArray(b)) {
     return a.length === b.length && a.every((item, index) => same(item, b[index]));
   }
+  if (isPlainObject(a) && isPlainObject(b)) {
+    const keys = Object.keys(a);
+    return keys.length === Object.keys(b).length && keys.every((key) => same(a[key], b[key]));
+  }
   return a === b;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === 'object' && value !== null && Object.getPrototypeOf(value) === Object.prototype
+  );
 }
 
 /** Only the fields that changed, as { before, after } — keeps the audit log readable. */

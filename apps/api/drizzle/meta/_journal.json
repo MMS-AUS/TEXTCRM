@@ -106,6 +106,20 @@
       "when": 1794673624917,
       "tag": "0014_contacts_companies_extra_emails",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1794674561495,
+      "tag": "0015_project_system_inverters",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794674570113,
+      "tag": "0016_project_drop_single_inverter",
+      "breakpoints": true
     }
   ]
 }

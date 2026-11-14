@@ -19,6 +19,7 @@ import {
   projectPricing,
   projects,
   projectSystemDesign,
+  projectSystemInverters,
   users,
 } from '../../db/schema/index.ts';
 import { logSystemActivity } from '../activities/service.ts';
@@ -175,12 +176,11 @@ export async function convertLead(
     .from(leadSystemRequirements)
     .where(eq(leadSystemRequirements.leadId, leadId));
   const [pricing] = await tx.select().from(leadPricing).where(eq(leadPricing.leadId, leadId));
-  const [firstInverter] = await tx
+  const inverterLines = await tx
     .select()
     .from(leadSystemInverters)
     .where(eq(leadSystemInverters.leadId, leadId))
-    .orderBy(asc(leadSystemInverters.position), asc(leadSystemInverters.createdAt))
-    .limit(1);
+    .orderBy(asc(leadSystemInverters.position), asc(leadSystemInverters.createdAt));
 
   // 1. The contact.
   let contact = await linkedContact(tx, lead);
@@ -275,12 +275,21 @@ export async function convertLead(
       systemSizeKw: system.systemSizeKw,
       panelId: system.panelId,
       panelCount: system.panelCount,
-      // A project records one inverter; a system with several lists the rest in its description.
-      inverterId: firstInverter?.inverterId ?? null,
-      inverterCount: firstInverter?.count ?? null,
       batteryId: system.batteryId,
       batteryCount: system.batteryCount,
     });
+    // Every inverter line of the lead comes across as it is: model, how many, grid or hybrid.
+    if (inverterLines.length > 0) {
+      await tx.insert(projectSystemInverters).values(
+        inverterLines.map((line, position) => ({
+          projectId: project.id,
+          position,
+          inverterId: line.inverterId,
+          count: line.count,
+          type: line.type,
+        })),
+      );
+    }
   }
   if (pricing) {
     await tx.insert(projectPricing).values({

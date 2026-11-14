@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   AU_STATES,
   formatAud,
+  INVERTER_TYPE_LABELS,
   projectPricingSchema,
   projectSiteSchema,
   projectSystemSchema,
@@ -18,6 +19,12 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useForm, useWatch, type Control, type FieldPath } from 'react-hook-form';
 import { DetailList } from '../../components/DetailList.tsx';
+import { InverterLinesEditor } from '../../components/InverterLinesEditor.tsx';
+import {
+  inverterDefaults,
+  useInverterLines,
+  type InverterFields,
+} from '../../components/inverter-lines.ts';
 import {
   HardwarePicker,
   type HardwareKind,
@@ -313,8 +320,7 @@ function SystemForm({ project, onDone }: { project: Project; onDone: () => void 
       systemSizeKw: system?.systemSizeKw ?? '',
       panelId: system?.panelId ?? null,
       panelCount: system?.panelCount ?? '',
-      inverterId: system?.inverterId ?? null,
-      inverterCount: system?.inverterCount ?? '',
+      inverters: inverterDefaults(system?.inverters),
       batteryId: system?.batteryId ?? null,
       batteryCount: system?.batteryCount ?? '',
     },
@@ -322,14 +328,19 @@ function SystemForm({ project, onDone }: { project: Project; onDone: () => void 
   const { control } = form;
   const panelCount = Number(useWatch({ control, name: 'panelCount' }) ?? 0);
   const suggested = panelWatts && panelCount > 0 ? systemSizeKw(panelCount, panelWatts) : null;
+  // The inverter lines drive the system size (their total capacity), as on a lead.
+  const inverterControl = control as unknown as Control<InverterFields>;
+  const savedInverters = system?.inverters ?? [];
+  const inverters = useInverterLines(inverterControl, savedInverters);
+  const calculatedKw = inverters.calculatedKw;
   const submit = form.handleSubmit((values) =>
     save.run(() => update.mutateAsync({ id: project.id, values })),
   );
 
   const row = (
     kind: HardwareKind,
-    idName: 'panelId' | 'inverterId' | 'batteryId',
-    countName: 'panelCount' | 'inverterCount' | 'batteryCount',
+    idName: 'panelId' | 'batteryId',
+    countName: 'panelCount' | 'batteryCount',
     label: string,
     initial: HardwareOption | null,
   ) => (
@@ -374,19 +385,26 @@ function SystemForm({ project, onDone }: { project: Project; onDone: () => void 
           </Alert>
         )}
         {row('panel', 'panelId', 'panelCount', 'Panels', system?.panel ?? null)}
-        {row('inverter', 'inverterId', 'inverterCount', 'Inverter', system?.inverter ?? null)}
+        <InverterLinesEditor control={inverterControl} lines={inverters} saved={savedInverters} />
         {row('battery', 'batteryId', 'batteryCount', 'Battery', system?.battery ?? null)}
         <FormField
           control={control}
           name="systemSizeKw"
           label="System size (kW)"
-          hint={suggested ? `${suggested} kW from the panels — leave empty to use it.` : undefined}
+          hint={
+            calculatedKw
+              ? 'Calculated from the inverters above.'
+              : suggested
+                ? `${suggested} kW from the panels — leave empty to use it.`
+                : undefined
+          }
           className="sm:col-span-2"
         >
           {(field, props) => (
             <Input
               {...props}
               {...textInput(field)}
+              {...(calculatedKw ? { value: calculatedKw, readOnly: true } : {})}
               inputMode="decimal"
               placeholder={suggested ?? ''}
             />
@@ -419,7 +437,12 @@ export function SystemDesignCard({ project, editable }: { project: Project; edit
           <DetailList
             items={[
               { label: 'Panels', value: hardwareLine(system.panelCount, system.panel) },
-              { label: 'Inverter', value: hardwareLine(system.inverterCount, system.inverter) },
+              ...system.inverters.map((line, index) => ({
+                label: system.inverters.length > 1 ? `Inverter ${String(index + 1)}` : 'Inverter',
+                value: line.inverter
+                  ? `${hardwareLine(line.count, line.inverter) ?? ''} · ${INVERTER_TYPE_LABELS[line.type]}`
+                  : null,
+              })),
               { label: 'Battery', value: hardwareLine(system.batteryCount, system.battery) },
               { label: 'System size', value: system.systemSizeKw && `${system.systemSizeKw} kW` },
             ]}

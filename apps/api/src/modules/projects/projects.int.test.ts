@@ -155,6 +155,106 @@ describe('lead → project conversion and projects', () => {
     expect(audits).toHaveLength(1);
   });
 
+  /** Two different inverter models from the catalog and each one's size in kW. */
+  async function twoInverters() {
+    const found = await as().hardware.search({ kind: 'inverter', search: '' });
+    const [first, second] = found;
+    if (!first || !second) throw new Error('need two inverters in the catalog');
+    return [
+      { ...first, kw: Number.parseFloat(first.spec) },
+      { ...second, kw: Number.parseFloat(second.spec) },
+    ] as const;
+  }
+
+  it('copies every inverter of the lead to the project exactly: model, count, type and order', async () => {
+    const { id: leadId } = await readyLead();
+    const [a, b] = await twoInverters();
+    await as().leads.updateSystem({
+      id: leadId,
+      values: {
+        inverters: [
+          { inverterId: b.id, count: 2, type: 'hybrid' },
+          { inverterId: a.id, count: 1, type: 'grid' },
+        ],
+      },
+    });
+    const lead = await as().leads.get({ id: leadId });
+    const kw = (2 * b.kw + a.kw).toFixed(2);
+    expect(lead.system?.systemSizeKw).toBe(kw);
+
+    const { id } = await as().projects.convertLead({ leadId });
+    const project = await as().projects.get({ id });
+    expect(project.system?.inverters.map((l) => [l.inverterId, l.count, l.type])).toEqual([
+      [b.id, 2, 'hybrid'],
+      [a.id, 1, 'grid'],
+    ]);
+    expect(project.system?.inverters[0]?.inverter?.label).toBe(b.label);
+    expect(project.system?.systemSizeKw).toBe(kw);
+
+    // The project's lines are its own copy: changing the lead afterwards leaves them alone.
+    await as().leads.updateSystem({ id: leadId, values: { inverters: [] } });
+    expect((await as().projects.get({ id })).system?.inverters).toHaveLength(2);
+  });
+
+  it('a lead with no inverter converts to a project with none', async () => {
+    const { id: leadId } = await readyLead();
+    const { id } = await as().projects.convertLead({ leadId });
+    expect((await as().projects.get({ id })).system?.inverters).toEqual([]);
+  });
+
+  it('edits a project’s inverters: add, change, remove; the size follows and the change is audited', async () => {
+    const { id: leadId } = await readyLead();
+    const { id } = await as().projects.convertLead({ leadId });
+    const [a, b] = await twoInverters();
+    const base = { panelId: null, panelCount: null, batteryId: null, batteryCount: null };
+
+    await as().projects.updateSystem({
+      id,
+      values: {
+        ...base,
+        inverters: [
+          { inverterId: a.id, count: 1, type: 'grid' },
+          { inverterId: b.id, count: 3, type: 'hybrid' },
+        ],
+      },
+    });
+    let project = await as().projects.get({ id });
+    expect(project.system?.inverters).toHaveLength(2);
+    expect(project.system?.systemSizeKw).toBe((a.kw + 3 * b.kw).toFixed(2));
+
+    await as().projects.updateSystem({
+      id,
+      values: { ...base, inverters: [{ inverterId: b.id, count: 1, type: 'grid' }] },
+    });
+    project = await as().projects.get({ id });
+    expect(project.system?.inverters.map((l) => [l.inverterId, l.count, l.type])).toEqual([
+      [b.id, 1, 'grid'],
+    ]);
+    expect(project.system?.systemSizeKw).toBe(b.kw.toFixed(2));
+    expect(project.history.filter((h) => h.action === 'update_system').length).toBe(2);
+
+    // Saving the same lines again changes nothing and adds no history.
+    await as().projects.updateSystem({
+      id,
+      values: { ...base, inverters: [{ inverterId: b.id, count: 1, type: 'grid' }] },
+    });
+    expect(
+      (await as().projects.get({ id })).history.filter((h) => h.action === 'update_system'),
+    ).toHaveLength(2);
+
+    await expect(
+      as().projects.updateSystem({
+        id,
+        values: {
+          ...base,
+          inverters: [
+            { inverterId: '00000000-0000-4000-8000-000000000000', count: 1, type: 'grid' },
+          ],
+        },
+      }),
+    ).rejects.toThrow();
+  });
+
   it('blocks a second conversion, also when two run at the same time', async () => {
     const { id: leadId } = await readyLead();
     const results = await Promise.allSettled([

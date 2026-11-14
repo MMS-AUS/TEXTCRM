@@ -44,11 +44,13 @@ import {
   projects,
   projectStcClaims,
   projectSystemDesign,
+  projectSystemInverters,
   users,
 } from '../../db/schema/index.ts';
 import { permissionProcedure, protectedProcedure, router } from '../../trpc/trpc.ts';
 import { logSystemActivity } from '../activities/service.ts';
 import { diff, entityHistory, recordAudit, type Actor } from '../audit.ts';
+import { checkInverterLines, withInverterLabels } from '../hardware/inverter-lines.ts';
 import { assertHardware, hardwareOption } from '../hardware/router.ts';
 import { assertOption } from '../options.ts';
 import { containsPattern, phoneContains } from '../search.ts';
@@ -301,19 +303,24 @@ export const projectsRouter = router({
         .where(eq(projects.id, input.id));
       if (!row) throw notFound();
       const { project } = row;
-      const [[system], [pricing], history, sections] = await Promise.all([
+      const [[system], inverterRows, [pricing], history, sections] = await Promise.all([
         ctx.db
           .select()
           .from(projectSystemDesign)
           .where(eq(projectSystemDesign.projectId, project.id)),
+        ctx.db
+          .select()
+          .from(projectSystemInverters)
+          .where(eq(projectSystemInverters.projectId, project.id))
+          .orderBy(asc(projectSystemInverters.position), asc(projectSystemInverters.createdAt)),
         ctx.db.select().from(projectPricing).where(eq(projectPricing.projectId, project.id)),
         entityHistory(ctx.db, 'project', project.id),
         loadSections(ctx.db, project),
       ]);
-      const [panel, inverter, battery] = await Promise.all([
+      const [panel, battery, inverters] = await Promise.all([
         hardwareOption(ctx.db, 'panel', system?.panelId),
-        hardwareOption(ctx.db, 'inverter', system?.inverterId),
         hardwareOption(ctx.db, 'battery', system?.batteryId),
+        withInverterLabels(ctx.db, inverterRows),
       ]);
       return {
         ...project,
@@ -331,12 +338,10 @@ export const projectsRouter = router({
               systemSizeKw: system.systemSizeKw,
               panelId: system.panelId,
               panelCount: system.panelCount,
-              inverterId: system.inverterId,
-              inverterCount: system.inverterCount,
               batteryId: system.batteryId,
               batteryCount: system.batteryCount,
+              inverters,
               panel,
-              inverter,
               battery,
             }
           : null,
@@ -455,10 +460,22 @@ export const projectsRouter = router({
           .select()
           .from(projectSystemDesign)
           .where(eq(projectSystemDesign.projectId, input.id));
-        const values = { ...input.values };
+        const { inverters, ...systemValues } = input.values;
+        const values = { ...systemValues };
         await assertHardware(tx, 'panel', values.panelId, existing?.panelId);
-        await assertHardware(tx, 'inverter', values.inverterId, existing?.inverterId);
         await assertHardware(tx, 'battery', values.batteryId, existing?.batteryId);
+        const currentRows = await tx
+          .select()
+          .from(projectSystemInverters)
+          .where(eq(projectSystemInverters.projectId, input.id))
+          .orderBy(asc(projectSystemInverters.position), asc(projectSystemInverters.createdAt));
+        // As on a lead, the system size is the inverters' total capacity whenever there are any.
+        const capacity = await checkInverterLines(
+          tx,
+          inverters,
+          new Set(currentRows.map((row) => row.inverterId)),
+        );
+        if (capacity) values.systemSizeKw = capacity;
         if (!values.systemSizeKw && values.panelId && values.panelCount) {
           const [panel] = await tx
             .select({ sizeW: hardwarePanels.sizeW })
@@ -466,12 +483,34 @@ export const projectsRouter = router({
             .where(eq(hardwarePanels.id, values.panelId));
           if (panel) values.systemSizeKw = systemSizeKw(values.panelCount, panel.sizeW);
         }
-        const changes = diff(existing ?? {}, values);
+        const invertersBefore = currentRows.map((row) => ({
+          inverterId: row.inverterId,
+          count: row.count,
+          type: row.type,
+        }));
+        const changes = diff(
+          { ...(existing ?? {}), inverters: invertersBefore },
+          { ...values, inverters },
+        );
         if (!changes) return { id: input.id };
         await tx
           .insert(projectSystemDesign)
           .values({ projectId: input.id, ...values })
           .onConflictDoUpdate({ target: projectSystemDesign.projectId, set: values });
+        await tx
+          .delete(projectSystemInverters)
+          .where(eq(projectSystemInverters.projectId, input.id));
+        if (inverters.length > 0) {
+          await tx.insert(projectSystemInverters).values(
+            inverters.map((row, position) => ({
+              projectId: input.id,
+              position,
+              inverterId: row.inverterId,
+              count: row.count,
+              type: row.type,
+            })),
+          );
+        }
         await tx
           .update(projects)
           .set({ updatedByUserId: ctx.user.id })

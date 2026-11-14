@@ -1,10 +1,9 @@
 import { TRPCError } from '@trpc/server';
-import { asc, eq, inArray } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import {
   formatAud,
   formatDateLong,
-  inverterCapacityKw,
   leadPricingSchema,
   leadSystemSchema,
   systemSizeKw,
@@ -22,6 +21,7 @@ import {
 import { permissionProcedure } from '../../trpc/trpc.ts';
 import { logSystemActivity } from '../activities/service.ts';
 import { diff, recordAudit } from '../audit.ts';
+import { checkInverterLines } from '../hardware/inverter-lines.ts';
 import { assertHardware, hardwareOptions } from '../hardware/router.ts';
 import { assertOption } from '../options.ts';
 
@@ -134,31 +134,13 @@ export const leadDetailProcedures = {
           .from(leadSystemInverters)
           .where(eq(leadSystemInverters.leadId, input.id))
           .orderBy(asc(leadSystemInverters.position), asc(leadSystemInverters.createdAt));
-        const currentIds = new Set(currentRows.map((row) => row.inverterId));
-        for (const row of inverters) {
-          await assertHardware(
-            tx,
-            'inverter',
-            row.inverterId,
-            currentIds.has(row.inverterId) ? row.inverterId : null,
-          );
-        }
         // The system size is the inverters' total capacity whenever there are inverters.
-        if (inverters.length > 0) {
-          const sizes = await tx
-            .select({ id: hardwareInverters.id, sizeKw: hardwareInverters.sizeKw })
-            .from(hardwareInverters)
-            .where(
-              inArray(
-                hardwareInverters.id,
-                inverters.map((row) => row.inverterId),
-              ),
-            );
-          const sizeOf = new Map(sizes.map((row) => [row.id, row.sizeKw]));
-          values.systemSizeKw = inverterCapacityKw(
-            inverters.map((row) => ({ sizeKw: sizeOf.get(row.inverterId) ?? 0, count: row.count })),
-          );
-        }
+        const capacity = await checkInverterLines(
+          tx,
+          inverters,
+          new Set(currentRows.map((row) => row.inverterId)),
+        );
+        if (capacity) values.systemSizeKw = capacity;
 
         // No size given but panels chosen: work it out from the panel wattage.
         if (!values.systemSizeKw && values.panelId && values.panelCount) {

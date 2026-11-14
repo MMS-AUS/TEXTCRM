@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { AU_STATES, stateForPostcode } from './au.ts';
 import { optionalId, optionalText } from './contacts.ts';
-import { decimalField, moneyField } from './lead-details.ts';
+import { decimalField, moneyField, MAX_INVERTERS, systemInverterSchema } from './lead-details.ts';
 import { ownerFilterSchema } from './leads.ts';
 
 /** §1.4 project stages, in order. Values match the `projectStages` option list. */
@@ -98,7 +98,6 @@ export type ProjectSiteValues = z.output<typeof projectSiteSchema>;
 
 const HARDWARE = [
   ['panelId', 'panelCount', 'panel'],
-  ['inverterId', 'inverterCount', 'inverter'],
   ['batteryId', 'batteryCount', 'battery'],
 ] as const;
 
@@ -107,8 +106,8 @@ export const projectSystemSchema = z
     systemSizeKw: decimalField({ max: 1000, scale: 2, label: 'the system size' }),
     panelId: optionalId,
     panelCount: countField,
-    inverterId: optionalId,
-    inverterCount: countField,
+    /** Every inverter on the system, copied from the lead at conversion and editable here. */
+    inverters: z.array(systemInverterSchema).max(MAX_INVERTERS).default([]),
     batteryId: optionalId,
     batteryCount: countField,
   })

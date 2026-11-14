@@ -84,8 +84,6 @@ export const projectSystemDesign = pgTable(
     systemSizeKw: numeric({ precision: 8, scale: 2 }),
     panelId: uuid().references(() => hardwarePanels.id, { onDelete: 'restrict' }),
     panelCount: integer(),
-    inverterId: uuid().references(() => hardwareInverters.id, { onDelete: 'restrict' }),
-    inverterCount: integer(),
     batteryId: uuid().references(() => hardwareBatteries.id, { onDelete: 'restrict' }),
     batteryCount: integer(),
     ...timestamps,
@@ -93,8 +91,32 @@ export const projectSystemDesign = pgTable(
   (t) => [
     check(
       'project_system_design_counts_non_negative',
-      sql`coalesce(${t.panelCount}, 0) >= 0 and coalesce(${t.inverterCount}, 0) >= 0 and coalesce(${t.batteryCount}, 0) >= 0`,
+      sql`coalesce(${t.panelCount}, 0) >= 0 and coalesce(${t.batteryCount}, 0) >= 0`,
     ),
+  ],
+);
+
+/** An inverter on a project's system design: a copy of the lead's lines, editable afterwards. */
+export const projectSystemInverters = pgTable(
+  'project_system_inverters',
+  {
+    id: id(),
+    projectId: uuid()
+      .notNull()
+      .references(() => projects.id, { onDelete: 'cascade' }),
+    position: integer().notNull().default(0),
+    inverterId: uuid()
+      .notNull()
+      .references(() => hardwareInverters.id, { onDelete: 'restrict' }),
+    count: integer().notNull().default(1),
+    /** 'grid' or 'hybrid'. */
+    type: text().notNull().default('grid'),
+    ...timestamps,
+  },
+  (t) => [
+    index('project_system_inverters_project_idx').on(t.projectId, t.position),
+    check('project_system_inverters_count_positive', sql`${t.count} > 0`),
+    check('project_system_inverters_type', sql`${t.type} in ('grid', 'hybrid')`),
   ],
 );
 

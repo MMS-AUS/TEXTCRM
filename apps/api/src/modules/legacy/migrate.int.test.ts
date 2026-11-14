@@ -10,6 +10,7 @@ import {
   projectPricing,
   projects,
   projectSystemDesign,
+  projectSystemInverters,
 } from '../../db/schema/index.ts';
 import { loadLegacySeedInput, seed } from '../../db/seed.ts';
 import { createTestDb, truncateAll } from '../../test/db.ts';
@@ -243,7 +244,13 @@ describe('legacy migration (Step 3.4)', () => {
       .from(projectSystemDesign)
       .where(eq(projectSystemDesign.projectId, project?.id ?? ''));
     expect(design).toMatchObject({ systemSizeKw: '6.65', panelCount: 14 });
-    expect(design?.inverterId).not.toBeNull();
+    // The legacy project's one inverter is the project's first (and only) inverter line.
+    const inverterLines = await db
+      .select()
+      .from(projectSystemInverters)
+      .where(eq(projectSystemInverters.projectId, project?.id ?? ''));
+    expect(inverterLines).toHaveLength(1);
+    expect(inverterLines[0]).toMatchObject({ count: 1, type: 'grid', position: 0 });
     expect(design?.panelId).not.toBeNull();
     const [pricing] = await db
       .select()
