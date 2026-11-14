@@ -375,10 +375,20 @@ describe('imports (Step 3.2)', () => {
     });
     const { result } = await importFile(
       [
-        ['Name', 'Phone', 'Email', 'Address', 'Suburb', 'State', 'Postcode', 'Type'],
-        ['Mia Chen', '0411 111 111', 'mia@example.com', '1 Bay Rd', 'Manly', 'NSW', '2095', ''],
-        ['Leo Park', '0422 222 222', '', '9 Hill St', 'Darwin', 'NT', '800', 'Commercial'],
-        ['Leo Park', '0422 222 222', '', '', '', '', '', ''],
+        [
+          'First Name',
+          'Last Name',
+          'Phone',
+          'Email',
+          'Address',
+          'Suburb',
+          'State',
+          'Postcode',
+          'Type',
+        ],
+        ['Mia', 'Chen', '0411 111 111', 'mia@example.com', '1 Bay Rd', 'Manly', 'NSW', '2095', ''],
+        ['Leo', 'Park', '0422 222 222', '', '9 Hill St', 'Darwin', 'NT', '800', 'Commercial'],
+        ['Leo', 'Park', '0422 222 222', '', '', '', '', '', ''],
       ],
       'contacts',
     );

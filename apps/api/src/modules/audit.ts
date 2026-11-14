@@ -12,6 +12,10 @@ type Values = Record<string, unknown>;
 
 function same(a: unknown, b: unknown): boolean {
   if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
+  // Lists (e.g. a lead's extra emails) are the same when they hold the same items in order.
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((item, index) => same(item, b[index]));
+  }
   return a === b;
 }
 
