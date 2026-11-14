@@ -56,7 +56,7 @@ const source = (mapping: Record<string, string>) => ({
   mapping,
 });
 
-const fullMapping = { sheetLeadId: 'Lead ID', fullName: 'Name', mobile: 'Phone' };
+const fullMapping = { sheetLeadId: 'Lead ID', firstName: 'Name', mobile: 'Phone' };
 
 describe('import wizard', () => {
   beforeEach(() => {
@@ -195,7 +195,7 @@ describe('import wizard', () => {
       path: '/settings/imports/$importId',
       url: `/settings/imports/${id}`,
       auth: signedIn(),
-      responses: { 'imports.get': job(), 'imports.source': source({ fullName: 'Name' }) },
+      responses: { 'imports.get': job(), 'imports.source': source({ firstName: 'Name' }) },
     });
     expect(await screen.findByText('1 · Match the columns')).toBeDefined();
     expect(screen.getByText('Olivia Nguyen')).toBeDefined();
@@ -244,7 +244,7 @@ describe('import wizard', () => {
           rows: [
             {
               rowNumber: 2,
-              data: { fullName: 'Olivia Nguyen', mobile: '0412 345 678' },
+              data: { firstName: 'Olivia Nguyen', mobile: '0412 345 678' },
               action: 'create',
               message: null,
               recordId: null,
@@ -252,7 +252,7 @@ describe('import wizard', () => {
             },
             {
               rowNumber: 3,
-              data: { fullName: 'Jack' },
+              data: { firstName: 'Jack' },
               action: 'error',
               message: 'Lead date "31/2/2026" isn\'t a date (use day/month/year).',
               recordId: null,

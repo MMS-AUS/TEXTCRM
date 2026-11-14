@@ -25,6 +25,6 @@ describe('import templates', () => {
     expect(sheet?.name).toBe('Leads');
     expect(sheet?.getColumn(column('Primary Mobile')).numFmt).toBe('@');
     expect(sheet?.getColumn(column('Postcode')).numFmt).toBe('@');
-    expect(sheet?.getRow(1).getCell(column('Full Name')).note).toBeTruthy();
+    expect(sheet?.getRow(1).getCell(column('Email')).note).toBeTruthy();
   });
 });

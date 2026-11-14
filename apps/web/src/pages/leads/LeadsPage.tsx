@@ -85,9 +85,9 @@ const columns = col.columns([
         dash
       ),
   }),
-  col.accessor('platform', {
-    id: 'platform',
-    header: 'Platform',
+  col.accessor('source', {
+    id: 'source',
+    header: 'Lead source',
     cell: (info) => <span className="text-fg-muted">{info.getValue() ?? dash}</span>,
   }),
   col.accessor('ownerName', {
@@ -209,7 +209,7 @@ export function LeadsPage() {
   const search = leadsSearchSchema.parse(useSearch({ strict: false }));
   const [creating, setCreating] = useState(false);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const options = useOptions(['platforms']);
+  const options = useOptions(['leadSources']);
   const users = useUsers();
 
   const setSearch = useBatchedPatch<LeadsSearch>((patch) => {
@@ -232,7 +232,7 @@ export function LeadsPage() {
   const filters = {
     search: search.q ?? '',
     statuses: search.status ?? [],
-    platform: search.platform,
+    source: search.source,
     owner: search.owner,
     state: search.state,
     dateFrom: search.from,
@@ -258,7 +258,7 @@ export function LeadsPage() {
   const filtered = Boolean(
     search.q ||
     search.status?.length ||
-    search.platform ||
+    search.source ||
     search.owner ||
     search.state ||
     search.from ||
@@ -397,12 +397,12 @@ export function LeadsPage() {
             />
             <div className="w-36">
               <Select
-                aria-label="Platform"
-                value={search.platform ?? ALL}
-                onValueChange={(platform) => {
-                  filter({ platform: platform === ALL ? undefined : platform });
+                aria-label="Lead source"
+                value={search.source ?? ALL}
+                onValueChange={(source) => {
+                  filter({ source: source === ALL ? undefined : source });
                 }}
-                options={[{ value: ALL, label: 'All platforms' }, ...options.options('platforms')]}
+                options={[{ value: ALL, label: 'All sources' }, ...options.options('leadSources')]}
               />
             </div>
             <div className="w-40">

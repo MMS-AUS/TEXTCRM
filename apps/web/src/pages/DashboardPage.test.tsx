@@ -11,7 +11,7 @@ const overview = {
     newWeek: 18,
     newMonth: 61,
     period: '7d',
-    byPlatform: [
+    bySource: [
       { label: 'Meta', count: 12 },
       { label: 'Website', count: 6 },
     ],
@@ -54,7 +54,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('3 today · 61 in 30 days')).toBeDefined();
     expect(screen.getByText('2 open over 30 days')).toBeDefined();
     expect(screen.getByText('1 overdue · 2 due today')).toBeDefined();
-    expect(screen.getByRole('list', { name: /New leads by platform/ })).toBeDefined();
+    expect(screen.getByRole('list', { name: /New leads by source/ })).toBeDefined();
     expect(screen.getByLabelText('Meta: 12 leads (67%)')).toBeDefined();
     expect(screen.getByRole('img', { name: 'Sales by month, last 6 months' })).toBeDefined();
     expect(

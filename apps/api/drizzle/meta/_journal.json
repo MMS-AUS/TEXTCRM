@@ -85,6 +85,20 @@
       "when": 1794260628256,
       "tag": "0011_lead_secondary_email",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794655335385,
+      "tag": "0012_lead_extra_emails_inverters",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794655353928,
+      "tag": "0013_lead_drop_platform_secondary_email",
+      "breakpoints": true
     }
   ]
 }

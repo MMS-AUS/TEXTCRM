@@ -124,7 +124,10 @@ async function matchAddress(db: Db, address: string): Promise<Target | null> {
     .select({ id: leads.id, contactId: leads.contactId })
     .from(leads)
     .where(
-      and(or(eq(leads.email, address), eq(leads.secondaryEmail, address)), isNull(leads.deletedAt)),
+      and(
+        or(eq(leads.email, address), sql`${address} = any(${leads.extraEmails})`),
+        isNull(leads.deletedAt),
+      ),
     )
     .orderBy(desc(leads.updatedAt))
     .limit(1);

@@ -209,7 +209,7 @@ function LeadView({ lead }: { lead: Lead }) {
                   {[lead.suburb, lead.state].filter(Boolean).join(', ')}
                 </span>
               )}
-              {lead.platform && <span>via {lead.platform}</span>}
+              {lead.source && <span>via {lead.source}</span>}
               <span>Lead {formatDate(lead.leadDate)}</span>
             </p>
           </div>
@@ -335,23 +335,23 @@ function LeadView({ lead }: { lead: Lead }) {
                   {
                     label: 'Email',
                     value: lead.email && (
-                      <a
-                        href={`mailto:${lead.email}`}
-                        className="hover:text-accent-text hover:underline"
-                      >
-                        {lead.email}
-                      </a>
-                    ),
-                  },
-                  {
-                    label: 'Secondary email',
-                    value: lead.secondaryEmail && (
-                      <a
-                        href={`mailto:${lead.secondaryEmail}`}
-                        className="hover:text-accent-text hover:underline"
-                      >
-                        {lead.secondaryEmail}
-                      </a>
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <a
+                          href={`mailto:${lead.email}`}
+                          className="hover:text-accent-text hover:underline"
+                        >
+                          {lead.email}
+                        </a>
+                        {lead.extraEmails.map((address) => (
+                          <a
+                            key={address}
+                            href={`mailto:${address}`}
+                            className="rounded bg-surface-2 px-1.5 py-0.5 text-xs text-fg-muted hover:text-accent-text"
+                          >
+                            {address}
+                          </a>
+                        ))}
+                      </span>
                     ),
                   },
                   {
@@ -391,8 +391,7 @@ function LeadView({ lead }: { lead: Lead }) {
             <CardContent className="py-1">
               <DetailList
                 items={[
-                  { label: 'Platform', value: lead.platform },
-                  { label: 'Source', value: lead.source },
+                  { label: 'Lead source', value: lead.source },
                   { label: 'Lead date', value: formatDate(lead.leadDate) },
                   { label: 'Sales person', value: lead.ownerName ?? 'Unassigned' },
                   {

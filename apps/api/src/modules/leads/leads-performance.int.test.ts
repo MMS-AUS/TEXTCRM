@@ -53,10 +53,10 @@ describe('leads list with 10,000 leads', () => {
     ['search by name', { search: 'olivia ngu' }],
     ['search by phone digits', { search: '0410 000 12' }],
     [
-      'status + platform + state + date range',
+      'status + source + state + date range',
       {
         statuses: ['New', 'Contacted'],
-        platform: 'Meta',
+        source: 'Meta',
         state: 'NSW' as const,
         dateFrom: '2026-01-01',
       },

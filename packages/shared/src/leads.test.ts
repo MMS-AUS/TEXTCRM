@@ -41,11 +41,11 @@ describe('duplicate detection', () => {
     // Emails match across primary and secondary, in either direction.
     expect(
       findDuplicateLead({ firstName: 'O', email: 'liv@work.example' }, [
-        { ...olivia, secondaryEmail: 'liv@work.example' },
+        { ...olivia, extraEmails: ['liv@work.example'] },
       ])?.matchedOn,
     ).toBe('email');
     expect(
-      findDuplicateLead({ firstName: 'O', secondaryEmail: 'olivia@example.com' }, [olivia])?.reason,
+      findDuplicateLead({ firstName: 'O', extraEmails: ['olivia@example.com'] }, [olivia])?.reason,
     ).toBe('same email (olivia@example.com)');
   });
 
@@ -100,5 +100,26 @@ describe('lead input', () => {
   it("knows today's date in Sydney", () => {
     // 2026-11-02 14:30 UTC is already 3 November in Sydney (AEDT, UTC+11).
     expect(businessToday(new Date('2026-11-02T14:30:00Z'))).toBe('2026-11-03');
+  });
+});
+
+describe('several emails in one box', () => {
+  const parse = (email: string | null) =>
+    leadInputSchema.safeParse({ firstName: 'Olivia', email, mobile: '0412345678' });
+
+  it('takes the first address as primary and keeps the rest as extra emails', () => {
+    const result = parse('Olivia@Home.example  liv@work.example, olivia@home.example');
+    expect(result.success && [result.data.email, result.data.extraEmails]).toEqual([
+      'olivia@home.example',
+      ['liv@work.example'],
+    ]);
+  });
+
+  it('allows no email, and rejects any address that is not valid', () => {
+    const none = parse('');
+    expect(none.success && [none.data.email, none.data.extraEmails]).toEqual([null, []]);
+    const bad = parse('a@b.example nope');
+    expect(bad.success).toBe(false);
+    expect(!bad.success && bad.error.issues[0]?.message).toContain('"nope"');
   });
 });

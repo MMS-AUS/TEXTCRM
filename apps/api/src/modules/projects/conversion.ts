@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { eq, sql } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import {
   businessToday,
   formatAud,
@@ -14,6 +14,7 @@ import {
   contacts,
   leadPricing,
   leads,
+  leadSystemInverters,
   leadSystemRequirements,
   projectPricing,
   projects,
@@ -127,7 +128,9 @@ export async function previewConversion(db: Db, leadId: string) {
       salesPerson: sales?.name ?? null,
       system: [
         system?.panel && `${String(system.panelCount ?? '')} × ${system.panel.label}`,
-        system?.inverter && `${String(system.inverterCount ?? '')} × ${system.inverter.label}`,
+        ...(system?.inverters ?? []).map(
+          (row) => row.inverter && `${String(row.count)} × ${row.inverter.label} (${row.type})`,
+        ),
         system?.battery && `${String(system.batteryCount ?? '')} × ${system.battery.label}`,
       ].filter((line): line is string => Boolean(line)),
       systemSizeKw: system?.systemSizeKw ?? null,
@@ -168,6 +171,12 @@ export async function convertLead(
     .from(leadSystemRequirements)
     .where(eq(leadSystemRequirements.leadId, leadId));
   const [pricing] = await tx.select().from(leadPricing).where(eq(leadPricing.leadId, leadId));
+  const [firstInverter] = await tx
+    .select()
+    .from(leadSystemInverters)
+    .where(eq(leadSystemInverters.leadId, leadId))
+    .orderBy(asc(leadSystemInverters.position), asc(leadSystemInverters.createdAt))
+    .limit(1);
 
   // 1. The contact.
   let contact = await linkedContact(tx, lead);
@@ -261,8 +270,9 @@ export async function convertLead(
       systemSizeKw: system.systemSizeKw,
       panelId: system.panelId,
       panelCount: system.panelCount,
-      inverterId: system.inverterId,
-      inverterCount: system.inverterCount,
+      // A project records one inverter; a system with several lists the rest in its description.
+      inverterId: firstInverter?.inverterId ?? null,
+      inverterCount: firstInverter?.count ?? null,
       batteryId: system.batteryId,
       batteryCount: system.batteryCount,
     });

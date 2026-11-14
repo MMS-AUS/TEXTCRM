@@ -36,12 +36,6 @@ const field = (key: string, label: string, aliases: string[], hint?: string): Im
 const PERSON_FIELDS = [
   field('firstName', 'First Name', ['firstname', 'given name']),
   field('lastName', 'Last Name', ['lastname', 'surname', 'family name']),
-  field(
-    'fullName',
-    'Full Name',
-    ['name', 'customer name', 'customer'],
-    'Split into first and last name when those columns are not mapped',
-  ),
   field('mobile', 'Primary Mobile', [
     'mobile',
     'phone',
@@ -62,22 +56,16 @@ const PERSON_FIELDS = [
   field('postcode', 'Postcode', ['post code', 'zip', 'postal code']),
 ];
 
-/** Leads also keep a second email (contacts don't), listed right after Email. */
-const LEAD_PERSON_FIELDS = PERSON_FIELDS.flatMap((personField) =>
+/** §1.8 "Expected columns" — the old intake sheet's headers are recognised as-is. */
+const LEAD_PERSON_FIELDS = PERSON_FIELDS.map((personField) =>
   personField.key === 'email'
-    ? [
-        personField,
-        field('secondaryEmail', 'Secondary Email', [
-          'other email',
-          'alternate email',
-          'alternative email',
-          'second email',
-        ]),
-      ]
-    : [personField],
+    ? {
+        ...personField,
+        hint: 'Several addresses can share a cell, separated by spaces — the first is primary',
+      }
+    : personField,
 );
 
-/** §1.8 "Expected columns" — the old intake sheet's headers are recognised as-is. */
 export const LEAD_IMPORT_FIELDS: readonly ImportField[] = [
   field(
     'sheetLeadId',
@@ -86,8 +74,7 @@ export const LEAD_IMPORT_FIELDS: readonly ImportField[] = [
     'Needed for the live sync; lets re-imports find the same lead',
   ),
   field('leadDate', 'Lead Date', ['date', 'created', 'date created', 'enquiry date']),
-  field('platform', 'Platform', ['channel']),
-  field('source', 'Lead Source', ['source']),
+  field('source', 'Lead Source', ['source', 'platform', 'channel']),
   field(
     'ownerName',
     'Sales Rep',
@@ -234,8 +221,8 @@ export function mappingProblems(
       problems.push('Map the Manufacturer and Model columns.');
     if (!mapping[size]) problems.push('Map the size column.');
   } else {
-    if (!mapping.firstName && !mapping.fullName) {
-      problems.push('Map a First Name or Full Name column.');
+    if (!mapping.firstName) {
+      problems.push('Map a First Name column.');
     }
     if (!mapping.mobile && !mapping.email) {
       problems.push('Map a mobile or an email column so customers can be reached.');
@@ -291,12 +278,6 @@ export function parseYesNo(text: string): boolean | null | undefined {
   if (['yes', 'y', 'true', '1', 'required'].includes(value)) return true;
   if (['no', 'n', 'false', '0', 'not required'].includes(value)) return false;
   return undefined;
-}
-
-/** "Olivia Nguyen" → Olivia / Nguyen; "Mary Anne de Silva" → Mary / Anne de Silva. */
-export function splitFullName(text: string): { firstName: string; lastName: string | null } {
-  const parts = text.trim().split(/\s+/).filter(Boolean);
-  return { firstName: parts[0] ?? '', lastName: parts.slice(1).join(' ') || null };
 }
 
 /** The option whose value or label matches, ignoring case and punctuation. */

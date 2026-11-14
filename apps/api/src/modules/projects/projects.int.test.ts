@@ -45,7 +45,7 @@ describe('lead → project conversion and projects', () => {
     suburb: 'Parramatta',
     state: 'NSW',
     postcode: '2150',
-    platform: 'Meta',
+    source: 'Meta',
     notes: 'Dog in the yard',
   };
 

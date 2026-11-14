@@ -44,7 +44,7 @@ describe('project workspace sections (Step 2.7)', () => {
         suburb: 'Parramatta',
         state: 'NSW',
         postcode: '2150',
-        platform: 'Meta',
+        source: 'Meta',
         ownerUserId: micky,
       },
     });

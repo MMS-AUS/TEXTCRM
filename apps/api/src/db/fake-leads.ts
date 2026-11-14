@@ -73,7 +73,7 @@ const PLACES: [suburb: string, postcode: string][] = [
   ['Hobart', '7000'],
   ['Perth', '6000'],
 ];
-const PLATFORMS = [
+const SOURCES = [
   'Meta',
   'Google Ads',
   'Website',
@@ -101,7 +101,7 @@ export function fakeLeads(count: number, ownerIds: string[], today = new Date())
       postcode,
       area: areaForPostcode(postcode),
       nearestBigCity: nearestBigCity(postcode, state),
-      platform: PLATFORMS[i % PLATFORMS.length] ?? null,
+      source: SOURCES[i % SOURCES.length] ?? null,
       status: STATUSES[(i * 3) % STATUSES.length] ?? 'New',
       ownerUserId:
         ownerIds.length > 0 && i % 4 !== 0 ? (ownerIds[i % ownerIds.length] ?? null) : null,

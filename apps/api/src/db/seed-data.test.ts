@@ -81,7 +81,8 @@ describe('legacy reference files', () => {
     const lists = buildOptionLists(input.dropdowns);
     const hw = buildHardware(input.hardware);
 
-    expect(lists).toHaveLength(56 - SKIPPED_OPTION_LISTS.size);
+    // 56 lists in the file; "platforms" is folded into leadSources.
+    expect(lists).toHaveLength(55 - SKIPPED_OPTION_LISTS.size);
     expect(lists.some((l) => SKIPPED_OPTION_LISTS.has(l.key))).toBe(false);
     // §1.7 counts minus duplicate manufacturer+model rows (70 panels, 146 inverters).
     expect(hw.panels).toHaveLength(791);

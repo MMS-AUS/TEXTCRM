@@ -55,7 +55,7 @@ describe('leads', () => {
     suburb: 'Parramatta',
     state: 'NSW',
     postcode: '2150',
-    platform: 'Meta',
+    source: 'Meta',
   };
 
   async function timeline(leadId: string) {
@@ -157,7 +157,7 @@ describe('leads', () => {
       values: {
         firstName: 'Jack',
         email: 'jack@example.com',
-        platform: 'Google Ads',
+        source: 'Google Ads',
         state: 'QLD',
         ownerUserId: micky,
         leadDate: '2026-01-15',
@@ -174,7 +174,7 @@ describe('leads', () => {
     expect(await names({ search: '0412 345' })).toEqual(['Olivia']);
     expect(await names({ search: 'parra' })).toEqual(['Olivia']);
     expect(await names({ search: '2150' })).toEqual(['Olivia']);
-    expect(await names({ platform: 'Google Ads' })).toEqual(['Jack']);
+    expect(await names({ source: 'Google Ads' })).toEqual(['Jack']);
     expect(await names({ state: 'QLD' })).toEqual(['Jack']);
     expect(await names({ owner: 'me' })).toEqual(['Jack']);
     expect(await names({ owner: 'none', sort: { id: 'name', desc: false } })).toEqual([

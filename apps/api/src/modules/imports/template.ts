@@ -18,7 +18,6 @@ const TEXT_COLUMNS = new Set(['sheetLeadId', 'mobile', 'secondaryMobile', 'postc
 
 /** Header notes where the import field's own hint doesn't fit a template. */
 const NOTES: Record<string, string> = {
-  fullName: 'Fill this, or First Name and Last Name.',
   leadDate: 'Day/month/year, e.g. 3/11/2026. Empty = today.',
   state: 'NSW, QLD, VIC, WA, SA, TAS, ACT or NT.',
 };

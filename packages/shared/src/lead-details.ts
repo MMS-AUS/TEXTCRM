@@ -43,9 +43,38 @@ const countField = z
 
 const HARDWARE = [
   ['panelId', 'panelCount', 'panel'],
-  ['inverterId', 'inverterCount', 'inverter'],
   ['batteryId', 'batteryCount', 'battery'],
 ] as const;
+
+export const INVERTER_TYPES = ['grid', 'hybrid'] as const;
+export type InverterType = (typeof INVERTER_TYPES)[number];
+export const INVERTER_TYPE_LABELS: Record<InverterType, string> = {
+  grid: 'Grid Inverter',
+  hybrid: 'Hybrid Inverter',
+};
+export const MAX_INVERTERS = 10;
+
+/** One inverter line on a system: a catalog model, how many, and whether it is grid or hybrid. */
+export const systemInverterSchema = z.object({
+  inverterId: z.uuid({ error: 'Choose the inverter model.' }),
+  count: z.union([z.string(), z.number()]).transform((value, ctx) => {
+    const number = value === '' ? 1 : Number(value);
+    if (!Number.isInteger(number) || number < 1 || number > 2000) {
+      ctx.addIssue({ code: 'custom', message: 'Enter a whole number, 1 or more.' });
+      return z.NEVER;
+    }
+    return number;
+  }),
+  type: z.enum(INVERTER_TYPES, { error: 'Choose Grid or Hybrid.' }),
+});
+export type SystemInverterValues = z.output<typeof systemInverterSchema>;
+
+/** Total inverter capacity in kW ("10.00") from each model's size and how many there are. */
+export function inverterCapacityKw(
+  inverters: readonly { sizeKw: string | number; count: number }[],
+): string {
+  return inverters.reduce((total, row) => total + Number(row.sizeKw) * row.count, 0).toFixed(2);
+}
 
 export const leadSystemSchema = z
   .object({
@@ -60,8 +89,8 @@ export const leadSystemSchema = z
     quarterlyBillAud: moneyField('the bill amount'),
     panelId: optionalId,
     panelCount: countField,
-    inverterId: optionalId,
-    inverterCount: countField,
+    /** Every inverter on the system. When there are any, the system size is their total capacity. */
+    inverters: z.array(systemInverterSchema).max(MAX_INVERTERS).default([]),
     batteryId: optionalId,
     batteryCount: countField,
   })

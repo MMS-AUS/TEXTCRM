@@ -15,8 +15,7 @@ const lead = {
   suburb: 'Parramatta',
   state: 'NSW',
   postcode: '2150',
-  platform: 'Meta',
-  source: null,
+  source: 'Meta',
   status: 'Proposal Sent',
   leadDate: '2026-11-01',
   ownerUserId: null,
@@ -30,8 +29,7 @@ const responses = {
   'leads.list': { total: 1, rows: [lead] },
   'leads.statusCounts': { New: 4, 'Proposal Sent': 1 },
   'optionLists.options': {
-    platforms: [{ value: 'Meta', label: 'Meta' }],
-    leadSources: [],
+    leadSources: [{ value: 'Meta', label: 'Meta' }],
     leadStatuses: [
       { value: 'New', label: 'New' },
       { value: 'Proposal Sent', label: 'Proposal Sent' },

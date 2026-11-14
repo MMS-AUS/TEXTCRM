@@ -203,9 +203,7 @@ function personOf(data: Record<string, string>) {
       reach: data.sizeW ?? data.sizeKw ?? data.usableCapacityKwh ?? '',
     };
   }
-  const name = data.firstName
-    ? [data.firstName, data.lastName].filter(Boolean).join(' ')
-    : (data.fullName ?? data.lastName ?? '');
+  const name = [data.firstName, data.lastName].filter(Boolean).join(' ');
   return { name: name || '—', reach: data.mobile ?? data.email ?? '' };
 }
 

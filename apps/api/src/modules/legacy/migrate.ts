@@ -17,6 +17,7 @@ import {
   hardwareInverters,
   hardwarePanels,
   leads,
+  leadSystemInverters,
   leadSystemRequirements,
   projects,
 } from '../../db/schema/index.ts';
@@ -123,8 +124,8 @@ const place = (lead: { address?: string; suburb?: string; state?: string; postco
 function leadData(lead: LegacyLead): Record<string, string> {
   const data: Record<string, string | undefined> = {
     leadDate: lead.leadDate,
-    platform: lead.platform,
-    source: lead.source,
+    // The old platform is part of Lead Source now; a more specific source wins.
+    source: lead.source ?? lead.platform,
     status: lead.status,
     ownerName: lead.salesPersonName ?? lead.assignedTo,
     firstName: lead.firstName,
@@ -556,13 +557,20 @@ async function migrateProject(
     systemSizeKw: legacy.systemSizeKw ? Number(legacy.systemSizeKw).toFixed(2) : null,
     panelId,
     panelCount: panelId ? (whole(legacy.noOfPanels) ?? null) : null,
-    inverterId,
-    inverterCount: inverterId ? (whole(legacy.noOfInverters) ?? null) : null,
   };
   await tx
     .insert(leadSystemRequirements)
     .values({ leadId, ...design })
     .onConflictDoUpdate({ target: leadSystemRequirements.leadId, set: design });
+  if (inverterId) {
+    await tx.delete(leadSystemInverters).where(eq(leadSystemInverters.leadId, leadId));
+    await tx.insert(leadSystemInverters).values({
+      leadId,
+      inverterId,
+      count: whole(legacy.noOfInverters) ?? 1,
+      type: 'grid',
+    });
+  }
   if (legacy.panelModel && !panelId)
     say(
       'Project',

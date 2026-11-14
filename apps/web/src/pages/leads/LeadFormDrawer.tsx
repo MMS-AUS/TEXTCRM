@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
+import { EmailTagsInput } from '../../components/EmailTagsInput.tsx';
 import { errorMessage } from '../../lib/errors.ts';
 import { useDebouncedValue, useOptions, useUsers } from '../../lib/hooks.ts';
 import { useTRPC } from '../../lib/trpc.ts';
@@ -36,14 +37,14 @@ export type EditableLead = {
   firstName: string;
   lastName: string | null;
   email: string | null;
-  secondaryEmail: string | null;
+  /** Further addresses, shown as tags after the primary one. */
+  extraEmails: string[];
   mobile: string | null;
   secondaryMobile: string | null;
   streetAddress: string | null;
   suburb: string | null;
   state: string | null;
   postcode: string | null;
-  platform: string | null;
   source: string | null;
   status: string;
   ownerUserId: string | null;
@@ -72,7 +73,16 @@ function DuplicateNotice({
 }) {
   const trpc = useTRPC();
   const parsed = leadInputSchema.safeParse(values);
-  const debounced = useDebouncedValue(parsed.success ? parsed.data : null, 400);
+  // The server takes the emails back as one space-separated box, as typed.
+  const debounced = useDebouncedValue(
+    parsed.success
+      ? {
+          ...parsed.data,
+          email: [parsed.data.email, ...parsed.data.extraEmails].filter(Boolean).join(' '),
+        }
+      : null,
+    400,
+  );
   const check = useQuery({
     ...trpc.leads.checkDuplicate.queryOptions({
       values: debounced ?? { firstName: '' },
@@ -129,7 +139,7 @@ function DuplicateNotice({
 function LeadForm({ lead, onDone }: { lead?: EditableLead; onDone: (id: string) => void }) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const options = useOptions(['platforms', 'leadSources', 'leadStatuses']);
+  const options = useOptions(['leadSources', 'leadStatuses']);
   const users = useUsers();
   const [serverError, setServerError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -141,15 +151,13 @@ function LeadForm({ lead, onDone }: { lead?: EditableLead; onDone: (id: string) 
     defaultValues: {
       firstName: lead?.firstName ?? '',
       lastName: lead?.lastName ?? '',
-      email: lead?.email ?? '',
-      secondaryEmail: lead?.secondaryEmail ?? '',
+      email: [lead?.email, ...(lead?.extraEmails ?? [])].filter(Boolean).join(' '),
       mobile: formatPhone(lead?.mobile),
       secondaryMobile: formatPhone(lead?.secondaryMobile),
       streetAddress: lead?.streetAddress ?? '',
       suburb: lead?.suburb ?? '',
       state: AU_STATES.find((state) => state === lead?.state) ?? '',
       postcode: lead?.postcode ?? '',
-      platform: lead?.platform ?? '',
       source: lead?.source ?? '',
       status: lead?.status ?? 'New',
       ownerUserId: lead?.ownerUserId ?? '',
@@ -215,17 +223,22 @@ function LeadForm({ lead, onDone }: { lead?: EditableLead; onDone: (id: string) 
           <FormField control={control} name="secondaryMobile" label="Other phone">
             {(field, props) => <Input {...props} {...textInput(field)} type="tel" />}
           </FormField>
-          <FormField control={control} name="email" label="Email" className="sm:col-span-2">
-            {(field, props) => <Input {...props} {...textInput(field)} type="email" />}
-          </FormField>
           <FormField
             control={control}
-            name="secondaryEmail"
-            label="Secondary email"
-            hint="e.g. a work address"
+            name="email"
+            label="Email"
+            hint="Press Space to add another address. The first one is the primary."
             className="sm:col-span-2"
           >
-            {(field, props) => <Input {...props} {...textInput(field)} type="email" />}
+            {(field, props) => (
+              <EmailTagsInput
+                props={props}
+                name={field.name}
+                value={typeof field.value === 'string' ? field.value : ''}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
           </FormField>
         </fieldset>
 
@@ -274,20 +287,7 @@ function LeadForm({ lead, onDone }: { lead?: EditableLead; onDone: (id: string) 
 
         <fieldset className="grid gap-4 sm:grid-cols-2">
           <legend className="mb-3 text-sm font-semibold">Lead</legend>
-          <FormField control={control} name="platform" label="Platform">
-            {(field, props) => (
-              <Select
-                {...props}
-                name={field.name}
-                value={field.value || NONE}
-                onValueChange={(value) => {
-                  field.onChange(value === NONE ? '' : value);
-                }}
-                options={[{ value: NONE, label: '—' }, ...options.options('platforms')]}
-              />
-            )}
-          </FormField>
-          <FormField control={control} name="source" label="Source">
+          <FormField control={control} name="source" label="Lead source">
             {(field, props) => (
               <Select
                 {...props}

@@ -202,21 +202,21 @@ describe('admin settings (Step 2.10)', () => {
 
   describe('option lists', () => {
     it('adds, rewords, reorders and archives options; protected values stay', async () => {
-      const { id } = await as().admin.optionLists.add({ key: 'platforms', label: 'TikTok' });
+      const { id } = await as().admin.optionLists.add({ key: 'leadSources', label: 'TikTok' });
       await expect(
-        as().admin.optionLists.add({ key: 'platforms', label: 'tiktok' }),
+        as().admin.optionLists.add({ key: 'leadSources', label: 'tiktok' }),
       ).rejects.toThrow('already in the list');
       await as().admin.optionLists.rename({ id, label: 'TikTok Ads' });
-      let list = await as().admin.optionLists.items({ key: 'platforms' });
+      let list = await as().admin.optionLists.items({ key: 'leadSources' });
       const added = list.options.find((o) => o.id === id);
       expect(added).toMatchObject({ value: 'TikTok', label: 'TikTok Ads' }); // value kept for old records
       expect(list.options.at(-1)?.id).toBe(id);
       await as().admin.optionLists.move({ id, direction: 'up' });
-      list = await as().admin.optionLists.items({ key: 'platforms' });
+      list = await as().admin.optionLists.items({ key: 'leadSources' });
       expect(list.options.at(-2)?.id).toBe(id);
       await as().admin.optionLists.setArchived({ id, archived: true });
       expect(
-        (await as().optionLists.options({ keys: ['platforms'] })).platforms?.some(
+        (await as().optionLists.options({ keys: ['leadSources'] })).leadSources?.some(
           (o) => o.value === 'TikTok',
         ),
       ).toBe(false);

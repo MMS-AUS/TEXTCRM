@@ -260,13 +260,10 @@ export function DashboardPage() {
           <div className="grid items-start gap-6 lg:grid-cols-3">
             {data.leads && (
               <>
-                <Widget
-                  title="New leads by platform"
-                  description={PERIOD_LABELS[data.leads.period]}
-                >
+                <Widget title="New leads by source" description={PERIOD_LABELS[data.leads.period]}>
                   <BarList
-                    data={data.leads.byPlatform.map((p) => ({ label: p.label, value: p.count }))}
-                    label={`New leads by platform, ${PERIOD_LABELS[data.leads.period].toLowerCase()}`}
+                    data={data.leads.bySource.map((p) => ({ label: p.label, value: p.count }))}
+                    label={`New leads by source, ${PERIOD_LABELS[data.leads.period].toLowerCase()}`}
                     unit="leads"
                     empty="No new leads in this period."
                   />

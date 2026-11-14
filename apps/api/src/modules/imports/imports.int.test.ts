@@ -193,9 +193,10 @@ describe('imports (Step 3.2)', () => {
     const result = await upload([
       headers,
       row({
-        'Full Name': 'Mia Chen',
+        'First Name': 'Mia',
+        'Last Name': 'Chen',
         'Primary Mobile': '412345678',
-        'Secondary Email': 'mia@work.example',
+        Email: 'mia@home.example Mia@Work.example',
         Postcode: '2150',
       }),
     ]);
@@ -203,7 +204,7 @@ describe('imports (Step 3.2)', () => {
     const job = await as().imports.get({ id: result.id });
     expect(job.status).toBe('previewed');
     expect(job.counts.create).toBe(1);
-    expect(job.mapping).toMatchObject({ fullName: 'Full Name', secondaryEmail: 'Secondary Email' });
+    expect(job.mapping).toMatchObject({ firstName: 'First Name', email: 'Email' });
     await as().imports.start({ id: result.id });
     await runImport(db, result.id);
     const [lead] = await liveLeads();
@@ -211,7 +212,9 @@ describe('imports (Step 3.2)', () => {
       firstName: 'Mia',
       lastName: 'Chen',
       mobile: '+61412345678',
-      secondaryEmail: 'mia@work.example',
+      email: 'mia@home.example',
+      extraEmails: ['mia@work.example'],
+      fullName: 'Mia Chen',
     });
   });
 
@@ -245,7 +248,7 @@ describe('imports (Step 3.2)', () => {
     expect(byRow.get(4)?.message).toContain('row 2');
     expect(byRow.get(5)).toMatchObject({ action: 'error' });
     expect(byRow.get(6)?.message).toContain('13/13/2026');
-    expect(byRow.get(7)?.message).toContain('Platform "TikTok" isn\'t in the list');
+    expect(byRow.get(7)?.message).toContain('Lead source "TikTok" isn\'t in the list');
     expect(byRow.get(7)?.message).toContain('Sales rep "Someone Else"');
 
     await as().imports.start({ id });
@@ -270,7 +273,7 @@ describe('imports (Step 3.2)', () => {
     // A mobile stored as a number in the sheet lost its leading zero; it's put back.
     expect(saved.find((lead) => lead.sheetLeadId === '105')?.mobile).toBe('+61456789012');
     const jack = saved.find((lead) => lead.sheetLeadId === '102');
-    expect(jack).toMatchObject({ state: 'QLD', status: 'New', platform: 'Website' });
+    expect(jack).toMatchObject({ state: 'QLD', status: 'New', source: 'Website' });
     const [system] = await db
       .select()
       .from(leadSystemRequirements)
@@ -440,7 +443,7 @@ describe('imports (Step 3.2)', () => {
     const { id } = await upload(HISTORIC);
     await expect(as().imports.start({ id })).rejects.toThrow('Preview the import first');
     await expect(as().imports.preview({ id, mapping: { lastName: 'Last Name' } })).rejects.toThrow(
-      'Map a First Name or Full Name column',
+      'Map a First Name column',
     );
     await expect(
       as().imports.preview({ id, mapping: { firstName: 'Nope', mobile: 'Primary Mobile' } }),

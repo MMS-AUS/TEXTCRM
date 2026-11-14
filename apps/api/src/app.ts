@@ -23,7 +23,7 @@ import { appRouter } from './trpc/router.ts';
 
 export interface AppDeps {
   config: Pick<Config, 'APP_URL' | 'ALLOWED_EMAIL_DOMAIN'> &
-    Partial<Pick<Config, 'SHEETS_SYNC_INTERVAL_MINUTES'>>;
+    Partial<Pick<Config, 'SHEETS_SYNC_INTERVAL_MINUTES' | 'NODE_ENV'>>;
   db: Db;
   logger: Logger;
   verifyIdToken: VerifyIdToken;

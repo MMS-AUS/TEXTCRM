@@ -74,7 +74,10 @@ export function listNameFromKey(key: string): string {
 }
 
 export function buildOptionLists(raw: unknown): OptionListSeed[] {
-  const file = dropdownFileSchema.parse(raw);
+  const parsed = dropdownFileSchema.parse(raw);
+  // The old "platforms" list is part of Lead Source now: its choices follow the source choices.
+  const { platforms, ...file } = parsed;
+  if (platforms) file.leadSources = [...(file.leadSources ?? []), ...platforms];
   return Object.entries(file)
     .filter(([key]) => !SKIPPED_OPTION_LISTS.has(key))
     .map(([key, values]) => {

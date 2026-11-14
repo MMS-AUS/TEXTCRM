@@ -69,24 +69,24 @@ describe('dashboard (Step 2.9)', () => {
       ...overrides,
     });
     await db.insert(leads).values([
-      lead({ platform: 'Meta', ownerUserId: simon }),
-      lead({ platform: 'Meta', status: 'Contacted', ownerUserId: simon }),
-      lead({ platform: 'Website', leadDate: daysAgo(3), status: 'Contacted' }),
+      lead({ source: 'Meta', ownerUserId: simon }),
+      lead({ source: 'Meta', status: 'Contacted', ownerUserId: simon }),
+      lead({ source: 'Website', leadDate: daysAgo(3), status: 'Contacted' }),
       lead({
-        platform: 'Website',
+        source: 'Website',
         leadDate: daysAgo(20),
         status: 'Proposal Sent',
         ownerUserId: micky,
       }),
-      lead({ platform: 'Google Ads', leadDate: daysAgo(60), status: 'Lost' }),
+      lead({ source: 'Google Ads', leadDate: daysAgo(60), status: 'Lost' }),
       lead({
-        platform: 'Meta',
+        source: 'Meta',
         leadDate: daysAgo(10),
         status: 'Converted to Project',
         ownerUserId: simon,
         convertedAt: new Date(),
       }),
-      lead({ platform: 'Meta', deletedAt: new Date() }), // never counted
+      lead({ source: 'Meta', deletedAt: new Date() }), // never counted
     ]);
 
     const [contact] = await db
@@ -169,7 +169,7 @@ describe('dashboard (Step 2.9)', () => {
     const week = await as().dashboard.overview({ period: '7d' });
 
     expect(week.leads).toMatchObject({ total: 6, newToday: 2, newWeek: 3, newMonth: 5 });
-    expect(week.leads?.byPlatform).toEqual([
+    expect(week.leads?.bySource).toEqual([
       { label: 'Meta', count: 2 },
       { label: 'Website', count: 1 },
     ]);
@@ -192,11 +192,11 @@ describe('dashboard (Step 2.9)', () => {
     expect(week.leads?.conversions[0]).toEqual({ label: 'Simon', leads: 3, converted: 1 });
 
     const month = await as().dashboard.overview({ period: '30d' });
-    expect(month.leads?.byPlatform).toEqual([
+    expect(month.leads?.bySource).toEqual([
       { label: 'Meta', count: 3 },
       { label: 'Website', count: 2 },
     ]);
-    expect((await as().dashboard.overview({ period: 'today' })).leads?.byPlatform).toEqual([
+    expect((await as().dashboard.overview({ period: 'today' })).leads?.bySource).toEqual([
       { label: 'Meta', count: 2 },
     ]);
 

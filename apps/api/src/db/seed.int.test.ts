@@ -19,7 +19,7 @@ describe('seed', () => {
     const s = await seed(db, input);
     expect(s.roles).toEqual({ inserted: SYSTEM_ROLE_KEYS.length, total: SYSTEM_ROLE_KEYS.length });
     expect(s.rolePermissions.total).toBe(SYSTEM_ROLE_KEYS.length * FEATURES.length);
-    expect(s.optionLists).toHaveLength(50);
+    expect(s.optionLists).toHaveLength(49); // the old platforms list is folded into leadSources
     expect(s.hardware.panels).toEqual({ inserted: 791, total: 791 });
     expect(s.hardware.inverters).toEqual({ inserted: 854, total: 854 });
     expect(s.hardware.batteries).toEqual({ inserted: 427, total: 427 });

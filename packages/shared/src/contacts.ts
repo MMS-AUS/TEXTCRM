@@ -28,6 +28,28 @@ export const optionalEmail = z
     return value;
   });
 
+/**
+ * Several email addresses typed into one box, separated by spaces (commas and semicolons work
+ * too). The first is the primary address; the rest are extra addresses for the same person.
+ * Out: valid, lower-cased, de-duplicated addresses in the order typed.
+ */
+export const emailList = z
+  .string()
+  .nullish()
+  .transform((value, ctx) => {
+    const seen = new Set<string>();
+    for (const token of (value ?? '').split(/[\s,;]+/)) {
+      const address = token.trim().toLowerCase();
+      if (!address) continue;
+      if (!z.email().safeParse(address).success) {
+        ctx.addIssue({ code: 'custom', message: `"${token}" is not a valid email address.` });
+        return z.NEVER;
+      }
+      seen.add(address);
+    }
+    return [...seen];
+  });
+
 /** Any common Australian format in, E.164 out. */
 export const optionalPhone = z
   .string()

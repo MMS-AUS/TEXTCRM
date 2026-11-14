@@ -48,7 +48,7 @@ const isoDate = z.iso.date().optional().catch(undefined);
 export const leadsSearchSchema = z.object({
   q: common.q,
   status: z.array(z.string().max(100)).max(20).optional().catch(undefined),
-  platform: common.type,
+  source: common.type,
   owner: ownerFilterSchema.optional().catch(undefined),
   state: z.enum(AU_STATES).optional().catch(undefined),
   from: isoDate,

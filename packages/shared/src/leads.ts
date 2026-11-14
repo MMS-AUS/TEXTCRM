@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AU_STATES, stateForPostcode } from './au.ts';
-import { optionalEmail, optionalPhone, optionalText } from './contacts.ts';
+import { emailList, optionalPhone, optionalText } from './contacts.ts';
 
 /** The business runs on Sydney/Brisbane time; "today" for lead dates means today there. */
 export const BUSINESS_TIME_ZONE = 'Australia/Sydney';
@@ -30,8 +30,8 @@ export const leadInputSchema = z
   .object({
     firstName: z.string().trim().min(1, 'Enter a first name.').max(100),
     lastName: optionalText(100),
-    email: optionalEmail,
-    secondaryEmail: optionalEmail,
+    /** One box, several addresses separated by spaces: the first is primary, the rest are tags. */
+    email: emailList,
     mobile: optionalPhone,
     secondaryMobile: optionalPhone,
     streetAddress: optionalText(200),
@@ -53,8 +53,7 @@ export const leadInputSchema = z
         }
         return value;
       }),
-    /** Option values from `platforms`, `leadSources`, `leadStatuses`. */
-    platform: optionalText(100),
+    /** Option values from `leadSources`, `leadStatuses`. */
     source: optionalText(200),
     status: z.string().trim().min(1).default('New'),
     ownerUserId: z
@@ -66,7 +65,7 @@ export const leadInputSchema = z
     notes: optionalText(5000),
   })
   .superRefine((lead, ctx) => {
-    if (!lead.mobile && !lead.email) {
+    if (!lead.mobile && lead.email.length === 0) {
       ctx.addIssue({
         code: 'custom',
         path: ['mobile'],
@@ -81,7 +80,12 @@ export const leadInputSchema = z
         message: `${lead.postcode ?? ''} is a ${postcodeState} postcode, not ${lead.state}.`,
       });
     }
-  });
+  })
+  .transform(({ email, ...lead }) => ({
+    ...lead,
+    email: email[0] ?? null,
+    extraEmails: email.slice(1),
+  }));
 
 export type LeadInput = z.input<typeof leadInputSchema>;
 export type LeadValues = z.output<typeof leadInputSchema>;
@@ -92,7 +96,7 @@ export const LEAD_SORTS = [
   'name',
   'leadDate',
   'status',
-  'platform',
+  'source',
   'owner',
   'location',
   'updatedAt',
@@ -104,7 +108,7 @@ export const ownerFilterSchema = z.union([z.uuid(), z.literal('me'), z.literal('
 export const leadFiltersSchema = z.object({
   search: z.string().trim().max(100).default(''),
   statuses: z.array(z.string().min(1).max(100)).max(20).default([]),
-  platform: z.string().trim().min(1).max(100).optional(),
+  source: z.string().trim().min(1).max(200).optional(),
   owner: ownerFilterSchema.optional(),
   state: z.enum(AU_STATES).optional(),
   dateFrom: isoDate.optional(),
@@ -164,7 +168,7 @@ export type DuplicateCandidate = {
   firstName: string;
   lastName?: string | null;
   email?: string | null;
-  secondaryEmail?: string | null;
+  extraEmails?: readonly string[] | null;
   mobile?: string | null;
   secondaryMobile?: string | null;
   streetAddress?: string | null;
@@ -202,7 +206,7 @@ export function findDuplicateLead<T extends DuplicateCandidate>(
   candidate: DuplicateCandidate,
   existing: readonly T[],
 ): DuplicateMatch<T> | null {
-  const candidateEmails = [candidate.email, candidate.secondaryEmail].filter(
+  const candidateEmails = [candidate.email, ...(candidate.extraEmails ?? [])].filter(
     (email): email is string => Boolean(email),
   );
   const candidatePhones = [candidate.mobile, candidate.secondaryMobile].filter(
@@ -216,7 +220,7 @@ export function findDuplicateLead<T extends DuplicateCandidate>(
   for (const lead of existing) {
     if (areDistinctProperties(candidate, lead)) continue;
 
-    const leadEmails = [lead.email, lead.secondaryEmail].filter(Boolean);
+    const leadEmails = [lead.email, ...(lead.extraEmails ?? [])].filter(Boolean);
     const email = candidateEmails.find((e) => leadEmails.includes(e));
     if (email) return { lead, matchedOn: 'email', reason: `same email (${email})` };
     const leadPhones = [lead.mobile, lead.secondaryMobile].filter(Boolean);

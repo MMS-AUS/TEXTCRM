@@ -52,11 +52,11 @@ async function leadSection(db: Db, today: string, period: DashboardPeriod) {
     })
     .from(leads)
     .where(live);
-  const byPlatform = await db
-    .select({ platform: leads.platform, count: count() })
+  const bySource = await db
+    .select({ source: leads.source, count: count() })
     .from(leads)
     .where(since(periodStart(today, period)))
-    .groupBy(leads.platform)
+    .groupBy(leads.source)
     .orderBy(sql`count(*) desc`);
   // Funnel in pipeline order (the leadStatuses option list's order).
   const funnel = await db
@@ -96,8 +96,8 @@ async function leadSection(db: Db, today: string, period: DashboardPeriod) {
     newWeek: int(totals?.week),
     newMonth: int(totals?.month),
     period,
-    byPlatform: byPlatform.map((row) => ({
-      label: row.platform ?? 'No platform',
+    bySource: bySource.map((row) => ({
+      label: row.source ?? 'No source',
       count: row.count,
     })),
     funnel: funnel.map((row) => ({ label: row.status, count: row.count })),

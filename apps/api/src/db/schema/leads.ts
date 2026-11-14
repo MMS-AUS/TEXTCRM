@@ -10,16 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
-import {
-  day,
-  e164Check,
-  emailFormatCheck,
-  id,
-  lowercaseEmailCheck,
-  money,
-  timestamps,
-  tstz,
-} from './_columns.ts';
+import { day, e164Check, id, lowercaseEmailCheck, money, timestamps, tstz } from './_columns.ts';
 import { companies, contacts } from './contacts.ts';
 import { hardwareBatteries, hardwareInverters, hardwarePanels } from './hardware.ts';
 import { sheetSyncSources } from './imports.ts';
@@ -40,9 +31,7 @@ export const leads = pgTable(
     leadDate: day()
       .notNull()
       .default(sql`current_date`),
-    /** Option value from `platforms`. */
-    platform: text(),
-    /** Option value from `leadSources`. */
+    /** Option value from `leadSources` (this also covers what used to be the lead platform). */
     source: text(),
     /** Option value from `leadStatuses`. */
     status: text().notNull().default('New'),
@@ -52,8 +41,13 @@ export const leads = pgTable(
     firstName: text().notNull(),
     lastName: text(),
     email: text(),
-    /** A second address for the same customer (e.g. personal + work). */
-    secondaryEmail: text(),
+    /** Further addresses for the same customer, typed after the primary one (shown as tags). */
+    extraEmails: text()
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** First + last name, kept by the database so every reader sees the same value. */
+    fullName: text().generatedAlwaysAs(sql`btrim(first_name || ' ' || coalesce(last_name, ''))`),
     mobile: text(),
     secondaryMobile: text(),
     managerRenteeFirstName: text(),
@@ -95,7 +89,6 @@ export const leads = pgTable(
     index('leads_status_idx').on(t.status),
     index('leads_owner_idx').on(t.ownerUserId),
     index('leads_lead_date_idx').on(t.leadDate),
-    index('leads_platform_idx').on(t.platform),
     // Dashboard (Step 2.9): conversions by salesperson.
     index('leads_converted_at_idx').on(t.convertedAt),
     index('leads_contact_idx').on(t.contactId),
@@ -107,8 +100,6 @@ export const leads = pgTable(
       .on(t.sheetSourceId, t.sheetLeadId)
       .where(sql`${t.sheetSourceId} is not null`),
     check('leads_email_lowercase', lowercaseEmailCheck(t.email)),
-    check('leads_secondary_email_lowercase', lowercaseEmailCheck(t.secondaryEmail)),
-    check('leads_secondary_email_format', emailFormatCheck(t.secondaryEmail)),
     check('leads_mobile_e164', e164Check(t.mobile)),
     check('leads_secondary_mobile_e164', e164Check(t.secondaryMobile)),
   ],
@@ -131,8 +122,6 @@ export const leadSystemRequirements = pgTable(
     quarterlyBillAud: money(),
     panelId: uuid().references(() => hardwarePanels.id, { onDelete: 'restrict' }),
     panelCount: integer(),
-    inverterId: uuid().references(() => hardwareInverters.id, { onDelete: 'restrict' }),
-    inverterCount: integer(),
     batteryId: uuid().references(() => hardwareBatteries.id, { onDelete: 'restrict' }),
     batteryCount: integer(),
     ...timestamps,
@@ -140,8 +129,32 @@ export const leadSystemRequirements = pgTable(
   (t) => [
     check(
       'lead_system_requirements_counts_non_negative',
-      sql`coalesce(${t.panelCount}, 0) >= 0 and coalesce(${t.inverterCount}, 0) >= 0 and coalesce(${t.batteryCount}, 0) >= 0`,
+      sql`coalesce(${t.panelCount}, 0) >= 0 and coalesce(${t.batteryCount}, 0) >= 0`,
     ),
+  ],
+);
+
+/** An inverter on a lead's system. A system can have several (e.g. a grid and a hybrid). */
+export const leadSystemInverters = pgTable(
+  'lead_system_inverters',
+  {
+    id: id(),
+    leadId: uuid()
+      .notNull()
+      .references(() => leads.id, { onDelete: 'cascade' }),
+    position: integer().notNull().default(0),
+    inverterId: uuid()
+      .notNull()
+      .references(() => hardwareInverters.id, { onDelete: 'restrict' }),
+    count: integer().notNull().default(1),
+    /** 'grid' or 'hybrid'. */
+    type: text().notNull().default('grid'),
+    ...timestamps,
+  },
+  (t) => [
+    index('lead_system_inverters_lead_idx').on(t.leadId, t.position),
+    check('lead_system_inverters_count_positive', sql`${t.count} > 0`),
+    check('lead_system_inverters_type', sql`${t.type} in ('grid', 'hybrid')`),
   ],
 );
 

@@ -13,7 +13,6 @@ import {
   normaliseStreet,
   parseSheetDate,
   parseYesNo,
-  splitFullName,
   type AddressValues,
   type ContactValues,
   type LeadValues,
@@ -39,7 +38,6 @@ import { activeOptions } from '../options.ts';
 
 type Option = { value: string; label: string };
 export type Lookups = {
-  platforms: Option[];
   leadSources: Option[];
   leadStatuses: Option[];
   roofTypes: Option[];
@@ -50,7 +48,6 @@ export type Lookups = {
 /** Option lists and active users, loaded once per import or sync run. */
 export async function loadLookups(db: Db | Tx): Promise<Lookups> {
   const lists = await activeOptions(db as Db, [
-    'platforms',
     'leadSources',
     'leadStatuses',
     'roofTypes',
@@ -61,7 +58,6 @@ export async function loadLookups(db: Db | Tx): Promise<Lookups> {
     .from(users)
     .where(eq(users.isActive, true));
   return {
-    platforms: lists.platforms ?? [],
     leadSources: lists.leadSources ?? [],
     leadStatuses: lists.leadStatuses ?? [],
     roofTypes: lists.roofTypes ?? [],
@@ -111,7 +107,6 @@ function firstIssue(error: z.ZodError, labels: Record<string, string>): string {
 const LEAD_LABELS: Record<string, string> = {
   firstName: 'First name',
   email: 'Email',
-  secondaryEmail: 'Secondary email',
   mobile: 'Mobile',
   secondaryMobile: 'Secondary mobile',
   state: 'State',
@@ -124,10 +119,6 @@ const LEAD_LABELS: Record<string, string> = {
 
 function names(data: Record<string, string>) {
   if (data.firstName) return { firstName: data.firstName, lastName: data.lastName ?? null };
-  if (data.fullName) {
-    const split = splitFullName(data.fullName);
-    return { firstName: split.firstName, lastName: data.lastName ?? split.lastName };
-  }
   return { firstName: '', lastName: data.lastName ?? null };
 }
 
@@ -195,14 +186,12 @@ export function toLeadRecord(data: Record<string, string>, lookups: Lookups): Re
   const parsed = leadInputSchema.safeParse({
     ...names(data),
     email: data.email,
-    secondaryEmail: data.secondaryEmail,
     mobile: cleanPhone(data.mobile),
     secondaryMobile: cleanPhone(data.secondaryMobile),
     streetAddress: data.streetAddress,
     suburb: data.suburb,
     state: cleanState(data.state),
     postcode: cleanPostcode(data.postcode),
-    platform: option('platform', lookups.platforms, 'Platform'),
     source: option('source', lookups.leadSources, 'Lead source'),
     status,
     ownerUserId,
@@ -289,24 +278,21 @@ const INTAKE_KEYS = [
   'firstName',
   'lastName',
   'email',
-  'secondaryEmail',
+  'extraEmails',
   'mobile',
   'secondaryMobile',
   'streetAddress',
   'suburb',
   'state',
   'postcode',
-  'platform',
   'source',
   'leadDate',
 ] as const;
 
 /** The intake changes this row would make to an existing lead (only fields the row has). */
 export async function leadIntakeChanges(db: Db | Tx, existing: LeadRow, record: LeadRecord) {
-  const has = (key: string) =>
-    record.given.has(key) ||
-    (key === 'firstName' && record.given.has('fullName')) ||
-    (key === 'lastName' && record.given.has('fullName'));
+  // Extra emails travel in the Email cell, so they change whenever the email does.
+  const has = (key: string) => record.given.has(key === 'extraEmails' ? 'email' : key);
   const core: Record<string, unknown> = {};
   for (const key of INTAKE_KEYS) {
     if (has(key) && record.lead[key] !== undefined) core[key] = record.lead[key];

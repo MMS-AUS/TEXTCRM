@@ -1,7 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   formatAud,
+  INVERTER_TYPE_LABELS,
+  INVERTER_TYPES,
+  inverterCapacityKw,
   LEAD_PIPELINE,
+  MAX_INVERTERS,
   leadPricingSchema,
   leadSystemSchema,
   systemSizeKw,
@@ -11,9 +15,9 @@ import {
   type LeadSystemValues,
 } from '@mms/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pencil } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { DetailList } from '../../components/DetailList.tsx';
 import {
   HardwarePicker,
@@ -38,6 +42,7 @@ import {
   DialogContent,
   DialogFooter,
   FormField,
+  IconButton,
   Input,
   Select,
   Textarea,
@@ -108,8 +113,11 @@ function SystemForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
     defaultValues: {
       panelId: system?.panelId ?? null,
       panelCount: system?.panelCount ?? '',
-      inverterId: system?.inverterId ?? null,
-      inverterCount: system?.inverterCount ?? '',
+      inverters: (system?.inverters ?? []).map((row) => ({
+        inverterId: row.inverterId,
+        count: row.count,
+        type: row.type,
+      })),
       batteryId: system?.batteryId ?? null,
       batteryCount: system?.batteryCount ?? '',
       systemSizeKw: system?.systemSizeKw ?? '',
@@ -126,6 +134,27 @@ function SystemForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
   const panelCount = Number(useWatch({ control, name: 'panelCount' }) ?? 0);
   const batteryRequired = useWatch({ control, name: 'batteryRequired' }) === true;
   const suggestedKw = panelWatts && panelCount > 0 ? systemSizeKw(panelCount, panelWatts) : null;
+
+  // Inverters: any number of lines, each a model + quantity + Grid/Hybrid. The system size is
+  // their total capacity (model kW x quantity), so it follows whatever is added here.
+  const inverterRows = useFieldArray({ control, name: 'inverters' });
+  const inverterValues = useWatch({ control, name: 'inverters' }) ?? [];
+  const [inverterKw, setInverterKw] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      (system?.inverters ?? []).flatMap((row) =>
+        row.inverter ? [[row.inverterId, Number.parseFloat(row.inverter.spec)]] : [],
+      ),
+    ),
+  );
+  const calculatedKw =
+    inverterValues.length > 0
+      ? inverterCapacityKw(
+          inverterValues.map((row) => ({
+            sizeKw: inverterKw[row.inverterId] ?? 0,
+            count: Number(row.count) || 0,
+          })),
+        )
+      : null;
 
   const submit = form.handleSubmit(async (values) => {
     setServerError(null);
@@ -159,8 +188,8 @@ function SystemForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
 
   const hardwareRow = (
     kind: HardwareKind,
-    idName: 'panelId' | 'inverterId' | 'batteryId',
-    countName: 'panelCount' | 'inverterCount' | 'batteryCount',
+    idName: 'panelId' | 'batteryId',
+    countName: 'panelCount' | 'batteryCount',
     label: string,
     initial: HardwareOption | null,
   ) => (
@@ -206,20 +235,114 @@ function SystemForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
           </Alert>
         )}
         {hardwareRow('panel', 'panelId', 'panelCount', 'Panels', system?.panel ?? null)}
-        {hardwareRow(
-          'inverter',
-          'inverterId',
-          'inverterCount',
-          'Inverter',
-          system?.inverter ?? null,
+        <div className="flex items-center justify-between sm:col-span-4">
+          <span className="text-sm font-medium">
+            {inverterRows.fields.length > 1 ? 'Inverters' : 'Inverter'}
+          </span>
+          <IconButton
+            label="Add another inverter"
+            size="sm"
+            variant="secondary"
+            disabled={inverterRows.fields.length >= MAX_INVERTERS}
+            onClick={() => {
+              inverterRows.append({ inverterId: '', count: '1', type: 'grid' });
+            }}
+          >
+            <Plus />
+          </IconButton>
+        </div>
+        {inverterRows.fields.length === 0 && (
+          <p className="text-sm text-fg-muted sm:col-span-4">No inverter yet. Use + to add one.</p>
         )}
+        {inverterRows.fields.map((row, index) => (
+          <div
+            key={row.id}
+            className="grid gap-4 sm:col-span-4 sm:grid-cols-[1fr_5rem_9.5rem_auto]"
+          >
+            <FormField
+              control={control}
+              name={`inverters.${String(index)}.inverterId` as 'inverters.0.inverterId'}
+              label={`Inverter ${String(index + 1)} model`}
+            >
+              {(field, props) => (
+                <HardwarePicker
+                  kind="inverter"
+                  props={props}
+                  value={field.value || null}
+                  initial={
+                    system?.inverters.find((saved) => saved.inverterId === field.value)?.inverter ??
+                    null
+                  }
+                  onChange={(option) => {
+                    field.onChange(option?.id ?? '');
+                    if (option) {
+                      setInverterKw((known) => ({
+                        ...known,
+                        [option.id]: Number.parseFloat(option.spec),
+                      }));
+                    }
+                  }}
+                />
+              )}
+            </FormField>
+            <FormField
+              control={control}
+              name={`inverters.${String(index)}.count` as 'inverters.0.count'}
+              label="How many"
+            >
+              {(field, props) => (
+                <Input
+                  {...props}
+                  name={field.name}
+                  value={String(field.value ?? '')}
+                  onChange={(event) => {
+                    field.onChange(event.target.value);
+                  }}
+                  onBlur={field.onBlur}
+                  inputMode="numeric"
+                />
+              )}
+            </FormField>
+            <FormField
+              control={control}
+              name={`inverters.${String(index)}.type` as 'inverters.0.type'}
+              label="Type"
+            >
+              {(field, props) => (
+                <Select
+                  {...props}
+                  name={field.name}
+                  value={String(field.value)}
+                  onValueChange={field.onChange}
+                  options={INVERTER_TYPES.map((type) => ({
+                    value: type,
+                    label: INVERTER_TYPE_LABELS[type],
+                  }))}
+                />
+              )}
+            </FormField>
+            <IconButton
+              label={`Remove inverter ${String(index + 1)}`}
+              className="mt-6"
+              onClick={() => {
+                inverterRows.remove(index);
+              }}
+            >
+              <Trash2 />
+            </IconButton>
+          </div>
+        ))}
         {hardwareRow('battery', 'batteryId', 'batteryCount', 'Battery', system?.battery ?? null)}
         <FormField
           control={control}
           name="systemSizeKw"
           label="System size (kW)"
           hint={
-            suggestedKw ? `${suggestedKw} kW from the panels — leave empty to use it.` : undefined
+            calculatedKw
+              ? 'Calculated from the inverters above.'
+              : suggestedKw
+                ? `${suggestedKw} kW from the panels — leave empty to use it.`
+                : undefined
           }
           className="sm:col-span-2"
         >
@@ -227,6 +350,7 @@ function SystemForm({ lead, onDone }: { lead: Lead; onDone: () => void }) {
             <Input
               {...props}
               {...textInput(field)}
+              {...(calculatedKw ? { value: calculatedKw, readOnly: true } : {})}
               inputMode="decimal"
               placeholder={suggestedKw ?? ''}
             />
@@ -318,7 +442,12 @@ export function SystemCard({ lead, editable }: { lead: Lead; editable: boolean }
           <DetailList
             items={[
               { label: 'Panels', value: hardwareLine(system.panelCount, system.panel) },
-              { label: 'Inverter', value: hardwareLine(system.inverterCount, system.inverter) },
+              ...system.inverters.map((row, index) => ({
+                label: system.inverters.length > 1 ? `Inverter ${String(index + 1)}` : 'Inverter',
+                value: row.inverter
+                  ? `${hardwareLine(row.count, row.inverter) ?? ''} · ${INVERTER_TYPE_LABELS[row.type]}`
+                  : null,
+              })),
               {
                 label: 'Battery',
                 value:

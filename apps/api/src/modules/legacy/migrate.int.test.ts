@@ -242,7 +242,8 @@ describe('legacy migration (Step 3.4)', () => {
       .select()
       .from(projectSystemDesign)
       .where(eq(projectSystemDesign.projectId, project?.id ?? ''));
-    expect(design).toMatchObject({ systemSizeKw: '6.65', panelCount: 14, inverterCount: 1 });
+    expect(design).toMatchObject({ systemSizeKw: '6.65', panelCount: 14 });
+    expect(design?.inverterId).not.toBeNull();
     expect(design?.panelId).not.toBeNull();
     const [pricing] = await db
       .select()

@@ -7,7 +7,6 @@ import {
   matchOption,
   parseSheetDate,
   parseYesNo,
-  splitFullName,
   suggestMapping,
   templateHeaders,
   templateMapping,
@@ -42,20 +41,15 @@ describe('suggestMapping', () => {
     });
   });
 
-  it('maps a Secondary Email column for leads but not contacts', () => {
-    const headers = ['Name', 'Email', 'Secondary Email'];
-    expect(suggestMapping('leads', headers)).toEqual({
-      fullName: 'Name',
-      email: 'Email',
-      secondaryEmail: 'Secondary Email',
-    });
-    expect(suggestMapping('leads', ['Other Email']).secondaryEmail).toBe('Other Email');
-    expect(suggestMapping('contacts', headers)).not.toHaveProperty('secondaryEmail');
+  it('has no Full Name, Secondary Email or Platform column to map', () => {
+    const headers = ['Name', 'Email', 'Secondary Email', 'Platform'];
+    // Platform is read as the Lead Source; the other two have nowhere to go.
+    expect(suggestMapping('leads', headers)).toEqual({ email: 'Email', source: 'Platform' });
+    expect(suggestMapping('contacts', headers)).toEqual({ email: 'Email' });
   });
 
   it('uses each column once and ignores unknown ones', () => {
-    expect(suggestMapping('contacts', ['Name', 'Mobile', 'Favourite colour'])).toEqual({
-      fullName: 'Name',
+    expect(suggestMapping('contacts', ['Mobile', 'Phone', 'Favourite colour'])).toEqual({
       mobile: 'Mobile',
     });
   });
@@ -64,7 +58,8 @@ describe('suggestMapping', () => {
 describe('templates', () => {
   it('has one heading per field, matched in full whatever the column order', () => {
     const headers = templateHeaders('leads');
-    expect(headers).toContain('Secondary Email');
+    expect(headers).not.toContain('Secondary Email');
+    expect(headers).not.toContain('Full Name');
     expect(new Set(headers).size).toBe(headers.length);
     const mapping = templateMapping('leads', [...headers].reverse());
     expect(mapping).toMatchObject({ firstName: 'First Name', mobile: 'Primary Mobile' });
@@ -100,10 +95,10 @@ describe('templates', () => {
 describe('mappingProblems', () => {
   it('needs a name and a way to reach the customer', () => {
     expect(mappingProblems('leads', { lastName: 'Surname' })).toEqual([
-      'Map a First Name or Full Name column.',
+      'Map a First Name column.',
       'Map a mobile or an email column so customers can be reached.',
     ]);
-    expect(mappingProblems('leads', { fullName: 'Name', email: 'Email' })).toEqual([]);
+    expect(mappingProblems('leads', { firstName: 'Name', email: 'Email' })).toEqual([]);
   });
 
   it('rejects unknown fields, reused columns, and a missing Lead ID when required', () => {
@@ -150,14 +145,6 @@ describe('cell helpers', () => {
     expect(parseYesNo('maybe')).toBeUndefined();
   });
 
-  it('splitFullName keeps everything after the first word as the last name', () => {
-    expect(splitFullName(' Mary  Anne de Silva ')).toEqual({
-      firstName: 'Mary',
-      lastName: 'Anne de Silva',
-    });
-    expect(splitFullName('Cher')).toEqual({ firstName: 'Cher', lastName: null });
-  });
-
   it('matchOption ignores case and punctuation', () => {
     const options = [{ value: 'Colorbond / Metal Sheet', label: 'Colorbond / Metal Sheet' }];
     expect(matchOption('colorbond metal sheet', options)).toBe('Colorbond / Metal Sheet');
@@ -167,9 +154,9 @@ describe('cell helpers', () => {
   it('mapRow keeps only mapped, non-empty cells', () => {
     expect(
       mapRow(['Name', 'Phone', 'Notes'], ['  Olivia ', '', 'x'], {
-        fullName: 'Name',
+        firstName: 'Name',
         mobile: 'Phone',
       }),
-    ).toEqual({ fullName: 'Olivia' });
+    ).toEqual({ firstName: 'Olivia' });
   });
 });
